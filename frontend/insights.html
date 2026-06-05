@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#2e7d32">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title data-i18n="insights.title">Farming Insights</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' fill='%232e7d32'/%3E%3Ctext x='96' y='140' font-size='120' text-anchor='middle' fill='white'%3E🌾%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="css/style.css">
+  <script src="config.js"></script>
+  <script src="js/i18n.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/insights.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js');
+    }
+  </script>
+</head>
+<body>
+  <header class="app-header">
+    <button class="btn-link" onclick="window.location.href='index.html'" style="color:white;font-size:1.2rem;padding:0;">&#8592;</button>
+    <h1 data-i18n="insights.title">Farming Insights</h1>
+    <button onclick="toggleLanguage()" style="background:none;border:none;color:white;font-size:0.8rem;cursor:pointer;">EN / SW</button>
+  </header>
+
+  <main class="container">
+    <div id="cachedBanner" class="cached-banner hidden" data-i18n="insights.cached">Showing cached data</div>
+
+    <div id="loadingState" class="loading-state">
+      <div class="spinner"></div>
+      <p data-i18n="common.loading">Loading...</p>
+    </div>
+
+    <section class="insight-section">
+      <h2>🌾 <span data-i18n="insights.seasonal">Seasonal Tips</span></h2>
+      <div id="seasonsList"></div>
+      <div id="seasonsEmpty" class="empty-state hidden">
+        <p data-i18n="insights.empty">No insights available yet</p>
+      </div>
+    </section>
+
+    <section class="insight-section">
+      <h2>📈 <span data-i18n="insights.market">Market Insights</span></h2>
+      <div id="marketList"></div>
+      <div id="marketEmpty" class="empty-state hidden">
+        <p data-i18n="insights.empty">No insights available yet</p>
+      </div>
+    </section>
+
+    <section class="insight-section">
+      <h2>💡 <span data-i18n="insights.tips">Farming Advice</span></h2>
+      <div id="tipsList"></div>
+      <div id="tipsEmpty" class="empty-state hidden">
+        <p data-i18n="insights.empty">No insights available yet</p>
+      </div>
+    </section>
+  </main>
+
+  <nav class="bottom-nav">
+    <a href="index.html" class="nav-item"><span class="nav-icon">🏠</span><span data-i18n="nav.home">Home</span></a>
+    <a href="advisor.html" class="nav-item"><span class="nav-icon">🤖</span><span data-i18n="nav.advisor">Advisor</span></a>
+    <a href="budget.html" class="nav-item"><span class="nav-icon">💰</span><span data-i18n="nav.budget">Budget</span></a>
+    <a href="insights.html" class="nav-item active"><span class="nav-icon">📊</span><span data-i18n="nav.insights">Insights</span></a>
+  </nav>
+</body>
+</html>

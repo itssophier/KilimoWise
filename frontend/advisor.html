@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#2e7d32">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title data-i18n="advisor.title">AI Advisor</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' fill='%232e7d32'/%3E%3Ctext x='96' y='140' font-size='120' text-anchor='middle' fill='white'%3E🌾%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="css/style.css">
+  <script src="config.js"></script>
+  <script src="js/i18n.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/advisor.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js');
+    }
+  </script>
+</head>
+<body>
+  <header class="app-header">
+    <button class="btn-link" onclick="window.location.href='index.html'" style="color:white;font-size:1.2rem;padding:0;">&#8592;</button>
+    <h1 data-i18n="advisor.title">AI Advisor</h1>
+    <button onclick="toggleLanguage()" style="background:none;border:none;color:white;font-size:0.8rem;cursor:pointer;">EN / SW</button>
+  </header>
+
+  <main class="container">
+    <div class="card">
+      <div class="form-group">
+        <label for="problemInput" data-i18n="advisor.describe">Describe your crop or animal issue</label>
+        <textarea id="problemInput" class="input" rows="3" data-i18n-placeholder="advisor.describe" placeholder="e.g. My maize leaves are turning yellow..."></textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="typeSelect" data-i18n="advisor.type">Issue Type</label>
+        <select id="typeSelect" class="select">
+          <option value="crop" data-i18n="advisor.crop">Crop</option>
+          <option value="animal" data-i18n="advisor.animal">Animal</option>
+        </select>
+      </div>
+
+      <div class="upload-placeholder mb-16">
+        <input type="file" disabled accept="image/*">
+        <span class="coming-soon" data-i18n="advisor.imagePlaceholder">Upload image (coming soon)</span>
+      </div>
+
+      <button id="askBtn" class="btn btn-primary btn-block" onclick="handleAnalyze()" data-i18n="advisor.ask">Ask KiliMoWise</button>
+    </div>
+
+    <div id="loadingState" class="loading-state hidden">
+      <div class="spinner"></div>
+      <p data-i18n="advisor.thinking">KiliMoWise is analyzing your issue...</p>
+    </div>
+
+    <div id="error" class="card hidden" style="border-left:4px solid var(--danger);"></div>
+
+    <div id="emptyState" class="empty-state">
+      <span class="empty-icon">🌾</span>
+      <p data-i18n="advisor.empty">Describe your issue above to get started</p>
+    </div>
+
+    <div id="results" class="result-section hidden">
+      <div class="result-card diagnosis">
+        <h3 data-i18n="advisor.diagnosis">Diagnosis</h3>
+        <p id="diagnosisContent"></p>
+      </div>
+
+      <div class="result-card solution">
+        <h3 data-i18n="advisor.solution">Recommended Solution</h3>
+        <p id="solutionContent"></p>
+      </div>
+
+      <div class="card">
+        <div class="flex-between">
+          <span data-i18n="advisor.confidence">Confidence</span>
+          <strong id="confidenceValue" class="badge badge-confidence">0%</strong>
+        </div>
+        <div class="confidence-bar">
+          <div id="confidenceFill" class="confidence-bar-fill" style="width:0%"></div>
+        </div>
+      </div>
+
+      <div id="remediesSection" class="card hidden">
+        <h3 class="card-title" data-i18n="advisor.remedies">Remedies</h3>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th data-i18n="advisor.name">Name</th>
+                <th data-i18n="advisor.price">Est. Price</th>
+                <th data-i18n="advisor.amount">Amount Needed</th>
+                <th data-i18n="advisor.location">Location</th>
+              </tr>
+            </thead>
+            <tbody id="remediesBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div id="historySection" class="hidden">
+      <h2 class="mt-16 mb-8" data-i18n="advisor.history">Recent Diagnoses</h2>
+      <div id="historyList"></div>
+    </div>
+  </main>
+
+  <nav class="bottom-nav">
+    <a href="index.html" class="nav-item"><span class="nav-icon">🏠</span><span data-i18n="nav.home">Home</span></a>
+    <a href="advisor.html" class="nav-item active"><span class="nav-icon">🤖</span><span data-i18n="nav.advisor">Advisor</span></a>
+    <a href="budget.html" class="nav-item"><span class="nav-icon">💰</span><span data-i18n="nav.budget">Budget</span></a>
+    <a href="insights.html" class="nav-item"><span class="nav-icon">📊</span><span data-i18n="nav.insights">Insights</span></a>
+  </nav>
+</body>
+</html>
