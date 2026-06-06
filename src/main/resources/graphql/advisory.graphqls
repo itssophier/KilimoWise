@@ -1,0 +1,29 @@
+enum AdvisoryType {
+    CROP
+    ANIMAL
+}
+
+type RemedyResponse {
+    name: String
+    estimatedPrice: String
+    amountNeeded: String
+    availabilityLocation: String
+}
+
+type AdviceResponse {
+    diagnosis: String
+    confidence: String
+    solution: String
+    remedies: [RemedyResponse]
+}
+
+input AdvisoryInput {
+    farmerId: ID!
+    type: AdvisoryType!
+    description: String
+    imageBase64: String
+}
+
+extend type Query {
+    analyzeProblem(input: AdvisoryInput!): AdviceResponse
+}

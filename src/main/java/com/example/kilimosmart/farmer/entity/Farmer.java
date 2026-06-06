@@ -54,6 +54,9 @@ public class Farmer {
     )
     private List<Expenses> expenses = new ArrayList<>();
 
+
+    private String password;
+
     public enum Gender {
         MALE,
         FEMALE,
