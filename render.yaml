@@ -1,3 +1,9 @@
+databases:
+  - name: kilimowise-db
+    plan: free
+    databaseName: kilimowise
+    postgresMajorVersion: 16
+
 services:
   - type: web
     name: kilimowise-backend
@@ -8,12 +14,26 @@ services:
     envVars:
       - key: GEMINI_API_KEY
         sync: false
-      - key: SPRING_DATASOURCE_URL
-        sync: false
+      - key: PGHOST
+        fromDatabase:
+          name: kilimowise-db
+          property: host
+      - key: PGPORT
+        fromDatabase:
+          name: kilimowise-db
+          property: port
+      - key: PGDATABASE
+        fromDatabase:
+          name: kilimowise-db
+          property: database
       - key: SPRING_DATASOURCE_USERNAME
-        sync: false
+        fromDatabase:
+          name: kilimowise-db
+          property: user
       - key: SPRING_DATASOURCE_PASSWORD
-        sync: false
+        fromDatabase:
+          name: kilimowise-db
+          property: password
 
   - type: static
     name: kilimowise-frontend
