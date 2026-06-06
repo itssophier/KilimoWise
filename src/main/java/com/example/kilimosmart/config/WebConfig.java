@@ -15,9 +15,12 @@ public class WebConfig implements WebMvcConfigurer {
     public void addCorsMappings(CorsRegistry registry) {
 
         registry.addMapping("/**")
-                .allowedOrigins(
+                .allowedOriginPatterns(
                         "http://localhost:3000",
-                        "http://127.0.0.1:3000"
+                        "http://127.0.0.1:3000",
+                        "https://*.onrender.com",
+                        "https://*.vercel.app",
+                        "https://*.netlify.app"
                 )
                 .allowedMethods(
                         "GET",
@@ -35,7 +38,7 @@ public class WebConfig implements WebMvcConfigurer {
     public CorsFilter corsFilter() {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
-        config.addAllowedOrigin("http://localhost:3000");
+        config.addAllowedOriginPattern("*");
         config.addAllowedHeader("*");
         config.addAllowedMethod("*");
 

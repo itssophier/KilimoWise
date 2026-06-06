@@ -22,6 +22,7 @@ input RegisterFarmerInput {
     dob: String!
     gender: String!
     location: String!
+    password: String!
 }
 
 extend type Query {

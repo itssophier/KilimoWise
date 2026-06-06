@@ -6,8 +6,8 @@ public record RegisterFarmerInput (
     String phoneNumber,
     String dob,
     String gender,
-    String location
-
+    String location,
+    String password
 ){
 
 }
