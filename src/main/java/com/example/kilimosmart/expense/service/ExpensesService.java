@@ -1,6 +1,6 @@
 package com.example.kilimosmart.expense.service;
 
-import com.example.kilimosmart.expense.dto.AddExpenseInput;
+import com.example.kilimosmart.expense.dto.ExpensesInput;
 import com.example.kilimosmart.expense.entity.Expenses;
 import com.example.kilimosmart.expense.repository.ExpensesRepository;
 import com.example.kilimosmart.farmer.entity.Farmer;
@@ -18,7 +18,7 @@ public class ExpensesService {
     private final ExpensesRepository expensesRepository;
     private final FarmerRepository farmerRepository;
 
-    public Expenses addExpense(AddExpenseInput input) {
+    public Expenses addExpense(ExpensesInput input) {
 
         Farmer farmer = farmerRepository.findById(input.farmerId())
                 .orElseThrow(() -> new RuntimeException("Farmer not found"));

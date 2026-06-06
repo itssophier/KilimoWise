@@ -3,12 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="theme-color" content="#2e7d32">
+  <meta name="theme-color" content="#16a34a">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title data-i18n="budget.title">Budget Tracker</title>
+  <title data-i18n="budget.title">Budget · KiliMoWise</title>
   <link rel="manifest" href="manifest.json">
-  <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' fill='%232e7d32'/%3E%3Ctext x='96' y='140' font-size='120' text-anchor='middle' fill='white'%3E🌾%3C/text%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' fill='%2316a34a'/%3E%3Ctext x='96' y='140' font-size='120' text-anchor='middle' fill='white'%3E🌾%3C/text%3E%3C/svg%3E">
   <link rel="stylesheet" href="css/style.css">
   <script src="config.js"></script>
   <script src="js/i18n.js"></script>
@@ -24,21 +27,24 @@
 </head>
 <body>
   <header class="app-header">
-    <button class="btn-link" onclick="window.location.href='index.html'" style="color:white;font-size:1.2rem;padding:0;">&#8592;</button>
+    <button class="back-btn" onclick="window.location.href='index.html'" aria-label="Back">←</button>
     <h1 data-i18n="budget.title">Budget Tracker</h1>
-    <button onclick="toggleLanguage()" style="background:none;border:none;color:white;font-size:0.8rem;cursor:pointer;">EN / SW</button>
+    <button class="lang-pill" onclick="toggleLanguage()">EN / SW</button>
   </header>
 
   <div id="offlineBanner" class="offline-banner hidden" data-i18n="budget.offline">Offline mode</div>
 
   <main class="container">
-    <div class="card text-center mb-16">
+    <div class="card card-elevated text-center fade-up" style="padding:22px 18px;">
       <div class="card-title" data-i18n="budget.total">Total Spending</div>
       <div id="totalExpenses" class="budget-total">KES 0.00</div>
     </div>
 
-    <div class="card">
-      <h3 class="card-title" data-i18n="budget.add">Add Expense</h3>
+    <div class="card fade-up">
+      <h3 class="card-title">
+        <span class="card-title-icon">＋</span>
+        <span data-i18n="budget.add">Add Expense</span>
+      </h3>
       <div id="budgetError" class="auth-error hidden"></div>
 
       <div class="form-group">
@@ -56,19 +62,29 @@
 
       <div class="form-group">
         <label for="expenseAmount" data-i18n="budget.amount">Amount (KES)</label>
-        <input type="number" id="expenseAmount" class="input" step="0.01" min="0" placeholder="0.00">
+        <div class="input-icon-wrap">
+          <span class="input-icon">💵</span>
+          <input type="number" id="expenseAmount" class="input" step="0.01" min="0" placeholder="0.00" inputmode="decimal">
+        </div>
       </div>
 
       <div class="form-group">
         <label for="expenseDescription" data-i18n="budget.description">Description</label>
-        <input type="text" id="expenseDescription" class="input" data-i18n-placeholder="budget.description" placeholder="e.g. Bought maize seeds">
+        <div class="input-icon-wrap">
+          <span class="input-icon">📝</span>
+          <input type="text" id="expenseDescription" class="input" data-i18n-placeholder="budget.description" placeholder="e.g. Bought maize seeds">
+        </div>
       </div>
 
       <button id="addBtn" class="btn btn-primary btn-block" onclick="handleAddExpense()" data-i18n="budget.add">Add Expense</button>
     </div>
 
+    <h3 class="section-title">
+      <span data-i18n="budget.recent">Recent Transactions</span>
+    </h3>
+
     <div id="loadingExpenses" class="loading-state">
-      <div class="spinner"></div>
+      <div class="spinner lg"></div>
       <p data-i18n="common.loading">Loading...</p>
     </div>
 
@@ -77,7 +93,7 @@
       <p data-i18n="budget.empty">No expenses yet. Start tracking!</p>
     </div>
 
-    <div class="card" id="expenseListContainer">
+    <div class="card hidden" id="expenseListContainer">
       <div id="expenseList"></div>
     </div>
   </main>

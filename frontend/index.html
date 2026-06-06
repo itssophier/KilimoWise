@@ -3,12 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="theme-color" content="#2e7d32">
+  <meta name="theme-color" content="#16a34a">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title data-i18n="app.name">KiliMoWise</title>
+  <title data-i18n="dashboard.title">Dashboard · KiliMoWise</title>
   <link rel="manifest" href="manifest.json">
-  <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' fill='%232e7d32'/%3E%3Ctext x='96' y='140' font-size='120' text-anchor='middle' fill='white'%3E🌾%3C/text%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' fill='%2316a34a'/%3E%3Ctext x='96' y='140' font-size='120' text-anchor='middle' fill='white'%3E🌾%3C/text%3E%3C/svg%3E">
   <link rel="stylesheet" href="css/style.css">
   <script src="config.js"></script>
   <script src="js/i18n.js"></script>
@@ -24,51 +27,61 @@
 </head>
 <body>
   <header class="app-header">
-    <div>
-      <span style="font-size:1.2rem;">🌾</span>
-      <span data-i18n="app.name" style="font-weight:600;margin-left:6px;">KiliMoWise</span>
+    <div class="header-brand">
+      <span class="brand-mark">🌾</span>
+      <span data-i18n="app.name">KiliMoWise</span>
     </div>
     <div class="header-actions">
-      <button onclick="toggleLanguage()">EN / SW</button>
-      <button onclick="logout()" data-i18n="auth.logout">Logout</button>
+      <button class="lang-pill" onclick="toggleLanguage()">EN / SW</button>
+      <button class="ghost-btn" onclick="logout()" data-i18n="auth.logout">Logout</button>
     </div>
   </header>
 
   <main class="container">
-    <h2 class="mb-16" style="font-size:1.2rem;">
-      <span data-i18n="auth.welcome">Karibu</span>, <span id="welcomeName"></span> 👋
-    </h2>
+    <section class="hero fade-up">
+      <div class="hero-greeting" data-i18n="auth.welcome">Karibu</div>
+      <div class="hero-name" id="welcomeName">Farmer</div>
+      <div class="hero-sub" data-i18n="dashboard.heroSub">Your farm's smart companion — ask, track, and grow.</div>
+    </section>
 
-    <div class="card">
-      <div class="card-title" data-i18n="dashboard.totalExpenses">Total Expenses</div>
-      <div id="expenseSkeleton" class="skeleton skeleton-text" style="height:32px;"></div>
-      <div id="expenseSummary" class="budget-total">—</div>
+    <div class="summary-card fade-up" id="summaryCard">
+      <div class="summary-icon">💰</div>
+      <div class="summary-content">
+        <div class="summary-label" data-i18n="dashboard.totalExpenses">Total Expenses</div>
+        <div id="expenseSummary" class="summary-value skeleton-line">—</div>
+      </div>
     </div>
 
-    <div class="card">
-      <div class="card-title" data-i18n="dashboard.latestTip">Farming Tip</div>
-      <div id="tipSkeleton" class="skeleton skeleton-text"></div>
-      <div class="skeleton skeleton-text short" id="tipSkeleton2"></div>
-      <p id="tipContent" style="font-size:0.9rem;color:var(--text-secondary);"></p>
+    <div id="diagnosisSection" class="card diagnosis-card hidden fade-up">
+      <div class="card-title">
+        <span class="card-title-icon">🩺</span>
+        <span data-i18n="dashboard.recentDiagnosis">Recent Diagnosis</span>
+      </div>
+      <p id="diagnosisPreview" class="text-secondary" style="font-size:0.92rem;line-height:1.5;"></p>
+      <button class="btn btn-ghost btn-block mt-16" onclick="window.location.href='advisor.html'" data-i18n="dashboard.viewAdvisor">View in Advisor</button>
     </div>
 
-    <div id="diagnosisSection" class="card hidden">
-      <div class="card-title" data-i18n="dashboard.recentDiagnosis">Recent Diagnosis</div>
-      <p id="diagnosisPreview" style="font-size:0.9rem;color:var(--text-secondary);"></p>
-      <button class="btn btn-outline btn-block mt-8" onclick="window.location.href='advisor.html'" data-i18n="advisor.title">AI Advisor</button>
+    <div class="tip-card fade-up">
+      <div class="tip-icon">💡</div>
+      <div class="tip-body">
+        <div class="tip-title" data-i18n="dashboard.latestTip">Farming Tip</div>
+        <div id="tipContent" class="tip-content">Rotate crops every season to maintain soil fertility and reduce pest buildup.</div>
+      </div>
     </div>
 
-    <h3 class="mb-8 mt-16" data-i18n="dashboard.quickActions">Quick Actions</h3>
-    <div class="quick-actions">
+    <h3 class="section-title">
+      <span data-i18n="dashboard.quickActions">Quick Actions</span>
+    </h3>
+    <div class="quick-actions fade-up">
       <a href="advisor.html" class="action-card">
         <span class="action-icon">🤖</span>
         <span class="action-label" data-i18n="nav.advisor">Advisor</span>
       </a>
-      <a href="budget.html" class="action-card">
+      <a href="budget.html" class="action-card alt">
         <span class="action-icon">💰</span>
         <span class="action-label" data-i18n="nav.budget">Budget</span>
       </a>
-      <a href="insights.html" class="action-card">
+      <a href="insights.html" class="action-card info">
         <span class="action-icon">📊</span>
         <span class="action-label" data-i18n="nav.insights">Insights</span>
       </a>

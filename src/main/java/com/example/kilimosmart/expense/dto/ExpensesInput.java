@@ -4,7 +4,7 @@ import com.example.kilimosmart.expense.entity.Expenses;
 
 import java.time.LocalDate;
 
-public record AddExpenseInput(
+public record ExpensesInput(
         Long farmerId,
         Expenses.Category category,
         Double amount,

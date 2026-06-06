@@ -52,6 +52,7 @@ public class Farmer {
             cascade = CascadeType.ALL,
             orphanRemoval = true
     )
+    @Builder.Default
     private List<Expenses> expenses = new ArrayList<>();
 
 

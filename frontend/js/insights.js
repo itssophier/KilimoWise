@@ -62,7 +62,7 @@ function renderSeasons(seasons) {
 
   seasons.forEach(function (s) {
     var card = document.createElement('div');
-    card.className = 'insight-card';
+    card.className = 'insight-card alt fade-up';
     card.innerHTML =
       '<div class="flex-between mb-8">' +
         '<h3>' + escapeHtml(s.crop || '—') + '</h3>' +
@@ -86,7 +86,7 @@ function renderMarket(market) {
 
   market.forEach(function (m) {
     var card = document.createElement('div');
-    card.className = 'insight-card';
+    card.className = 'insight-card info fade-up';
     card.innerHTML =
       '<h3>' + escapeHtml(m.title || '—') + '</h3>' +
       '<p>' + escapeHtml(m.content || '') + '</p>';
@@ -105,10 +105,15 @@ function renderTips(tips) {
   }
   empty.classList.add('hidden');
 
-  tips.forEach(function (t) {
+  tips.forEach(function (t, i) {
     var card = document.createElement('div');
-    card.className = 'insight-card';
-    card.innerHTML = '<p>' + escapeHtml(t.content || '—') + '</p>';
+    card.className = 'insight-card fade-up';
+    card.innerHTML =
+      '<div class="flex-between mb-8">' +
+        '<h3>💡 Tip ' + (i + 1) + '</h3>' +
+        '<span class="badge badge-confidence">Farming</span>' +
+      '</div>' +
+      '<p>' + escapeHtml(t.content || '—') + '</p>';
     el.appendChild(card);
   });
 }
@@ -118,7 +123,7 @@ function showLoading(show) {
 }
 
 function cacheInsights(data) {
-  localStorage.setItem(INSIGHTS_CACHE_KEY, JSON.stringify(data));
+  try { localStorage.setItem(INSIGHTS_CACHE_KEY, JSON.stringify(data)); } catch (e) { /* ignore */ }
 }
 
 function getCachedInsights() {

@@ -3,12 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="theme-color" content="#2e7d32">
+  <meta name="theme-color" content="#16a34a">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title data-i18n="advisor.title">AI Advisor</title>
+  <title data-i18n="advisor.title">AI Advisor · KiliMoWise</title>
   <link rel="manifest" href="manifest.json">
-  <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' fill='%232e7d32'/%3E%3Ctext x='96' y='140' font-size='120' text-anchor='middle' fill='white'%3E🌾%3C/text%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' fill='%2316a34a'/%3E%3Ctext x='96' y='140' font-size='120' text-anchor='middle' fill='white'%3E🌾%3C/text%3E%3C/svg%3E">
   <link rel="stylesheet" href="css/style.css">
   <script src="config.js"></script>
   <script src="js/i18n.js"></script>
@@ -24,13 +27,13 @@
 </head>
 <body>
   <header class="app-header">
-    <button class="btn-link" onclick="window.location.href='index.html'" style="color:white;font-size:1.2rem;padding:0;">&#8592;</button>
+    <button class="back-btn" onclick="window.location.href='index.html'" aria-label="Back">←</button>
     <h1 data-i18n="advisor.title">AI Advisor</h1>
-    <button onclick="toggleLanguage()" style="background:none;border:none;color:white;font-size:0.8rem;cursor:pointer;">EN / SW</button>
+    <button class="lang-pill" onclick="toggleLanguage()">EN / SW</button>
   </header>
 
   <main class="container">
-    <div class="card">
+    <div class="card fade-up">
       <div class="form-group">
         <label for="problemInput" data-i18n="advisor.describe">Describe your crop or animal issue</label>
         <textarea id="problemInput" class="input" rows="3" data-i18n-placeholder="advisor.describe" placeholder="e.g. My maize leaves are turning yellow..."></textarea>
@@ -39,21 +42,32 @@
       <div class="form-group">
         <label for="typeSelect" data-i18n="advisor.type">Issue Type</label>
         <select id="typeSelect" class="select">
-          <option value="CROP" data-i18n="advisor.crop">Crop</option>
-          <option value="ANIMAL" data-i18n="advisor.animal">Animal</option>
+          <option value="CROP" data-i18n="advisor.crop">🌱 Crop</option>
+          <option value="ANIMAL" data-i18n="advisor.animal">🐄 Animal</option>
         </select>
       </div>
 
-      <div class="upload-placeholder mb-16">
-        <input type="file" disabled accept="image/*">
-        <span class="coming-soon" data-i18n="advisor.imagePlaceholder">Upload image (coming soon)</span>
+      <div class="form-group">
+        <label data-i18n="advisor.photo">Photo (optional)</label>
+        <label class="upload-zone" id="uploadZone">
+          <div class="upload-icon">📷</div>
+          <div class="upload-text">
+            <div data-i18n="advisor.upload">Tap to add a photo</div>
+            <div class="upload-hint" data-i18n="advisor.uploadHint">Helps the AI identify the issue</div>
+          </div>
+          <input type="file" id="imageInput" accept="image/*" capture="environment">
+        </label>
+        <div id="imagePreview" class="upload-preview hidden">
+          <img id="previewImg" alt="preview">
+          <button type="button" class="upload-remove" id="removeImageBtn" aria-label="Remove">✕</button>
+        </div>
       </div>
 
       <button id="askBtn" class="btn btn-primary btn-block" onclick="handleAnalyze()" data-i18n="advisor.ask">Ask KiliMoWise</button>
     </div>
 
     <div id="loadingState" class="loading-state hidden">
-      <div class="spinner"></div>
+      <div class="spinner lg"></div>
       <p data-i18n="advisor.thinking">KiliMoWise is analyzing your issue...</p>
     </div>
 
@@ -65,28 +79,28 @@
     </div>
 
     <div id="results" class="result-section hidden">
-      <div class="result-card diagnosis">
-        <h3 data-i18n="advisor.diagnosis">Diagnosis</h3>
+      <div class="result-card diagnosis fade-up">
+        <h3><span class="ic">🩺</span> <span data-i18n="advisor.diagnosis">Diagnosis</span></h3>
         <p id="diagnosisContent"></p>
       </div>
 
-      <div class="result-card solution">
-        <h3 data-i18n="advisor.solution">Recommended Solution</h3>
+      <div class="result-card solution fade-up">
+        <h3><span class="ic">💡</span> <span data-i18n="advisor.solution">Recommended Solution</span></h3>
         <p id="solutionContent"></p>
       </div>
 
-      <div class="card">
-        <div class="flex-between">
-          <span data-i18n="advisor.confidence">Confidence</span>
-          <strong id="confidenceValue" class="badge badge-confidence">0%</strong>
+      <div class="card fade-up">
+        <div class="confidence-row">
+          <span class="label" data-i18n="advisor.confidence">Confidence</span>
+          <strong id="confidenceValue" class="value">0%</strong>
         </div>
         <div class="confidence-bar">
           <div id="confidenceFill" class="confidence-bar-fill" style="width:0%"></div>
         </div>
       </div>
 
-      <div id="remediesSection" class="card hidden">
-        <h3 class="card-title" data-i18n="advisor.remedies">Remedies</h3>
+      <div id="remediesSection" class="result-card remedies hidden fade-up">
+        <h3><span class="ic">🛒</span> <span data-i18n="advisor.remedies">Remedies & Where to Buy</span></h3>
         <div class="table-wrapper">
           <table>
             <thead>
@@ -104,7 +118,9 @@
     </div>
 
     <div id="historySection" class="hidden">
-      <h2 class="mt-16 mb-8" data-i18n="advisor.history">Recent Diagnoses</h2>
+      <h3 class="section-title">
+        <span data-i18n="advisor.history">Recent Diagnoses</span>
+      </h3>
       <div id="historyList"></div>
     </div>
   </main>

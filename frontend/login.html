@@ -3,12 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="theme-color" content="#2e7d32">
+  <meta name="theme-color" content="#16a34a">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title data-i18n="app.name">KiliMoWise</title>
   <link rel="manifest" href="manifest.json">
-  <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' fill='%232e7d32'/%3E%3Ctext x='96' y='140' font-size='120' text-anchor='middle' fill='white'%3E🌾%3C/text%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' fill='%2316a34a'/%3E%3Ctext x='96' y='140' font-size='120' text-anchor='middle' fill='white'%3E🌾%3C/text%3E%3C/svg%3E">
   <link rel="stylesheet" href="css/style.css">
   <script src="config.js"></script>
   <script src="js/i18n.js"></script>
@@ -20,26 +23,34 @@
   <div class="auth-container">
     <div class="auth-header">
       <div class="auth-logo">
-        <span class="logo-icon">🌾</span>
+        <div class="logo-mark">🌾</div>
         <h1 data-i18n="app.name">KiliMoWise</h1>
         <p class="tagline" data-i18n="app.tagline">Smart AI Farm Assistant</p>
       </div>
-      <button class="lang-toggle" onclick="toggleLanguage()" aria-label="Toggle language">
+      <button class="lang-pill lang-toggle" onclick="toggleLanguage()" aria-label="Toggle language">
         <span id="langLabel">EN / SW</span>
       </button>
     </div>
 
-    <div class="auth-card card">
-      <div id="authError" class="auth-error"></div>
+    <div class="auth-card">
+      <h2 id="authHeading" data-i18n="auth.welcomeBack">Welcome back</h2>
+
+      <div id="authError" class="auth-error hidden"></div>
 
       <div id="registerFields" class="hidden">
         <div class="form-group">
           <label for="firstNameInput" data-i18n="auth.firstName">First Name</label>
-          <input type="text" id="firstNameInput" class="input" data-i18n-placeholder="auth.firstName" placeholder="First Name" autocomplete="given-name">
+          <div class="input-icon-wrap">
+            <span class="input-icon">👤</span>
+            <input type="text" id="firstNameInput" class="input" data-i18n-placeholder="auth.firstName" placeholder="First Name" autocomplete="given-name">
+          </div>
         </div>
         <div class="form-group">
           <label for="lastNameInput" data-i18n="auth.lastName">Last Name</label>
-          <input type="text" id="lastNameInput" class="input" data-i18n-placeholder="auth.lastName" placeholder="Last Name" autocomplete="family-name">
+          <div class="input-icon-wrap">
+            <span class="input-icon">👤</span>
+            <input type="text" id="lastNameInput" class="input" data-i18n-placeholder="auth.lastName" placeholder="Last Name" autocomplete="family-name">
+          </div>
         </div>
         <div class="form-group">
           <label for="dobInput" data-i18n="auth.dob">Date of Birth</label>
@@ -55,18 +66,27 @@
         </div>
         <div class="form-group">
           <label for="locationInput" data-i18n="auth.location">Location</label>
-          <input type="text" id="locationInput" class="input" data-i18n-placeholder="auth.location" placeholder="Location" autocomplete="country-name">
+          <div class="input-icon-wrap">
+            <span class="input-icon">📍</span>
+            <input type="text" id="locationInput" class="input" data-i18n-placeholder="auth.location" placeholder="Location" autocomplete="country-name">
+          </div>
         </div>
       </div>
 
       <div class="form-group">
         <label for="phoneInput" data-i18n="auth.phone">Phone Number</label>
-        <input type="tel" id="phoneInput" class="input" data-i18n-placeholder="auth.phone" placeholder="Phone Number" autocomplete="tel">
+        <div class="input-icon-wrap">
+          <span class="input-icon">📱</span>
+          <input type="tel" id="phoneInput" class="input" data-i18n-placeholder="auth.phone" placeholder="Phone Number" autocomplete="tel" inputmode="tel">
+        </div>
       </div>
 
       <div class="form-group">
         <label for="passwordInput" data-i18n="auth.password">Password</label>
-        <input type="password" id="passwordInput" class="input" data-i18n-placeholder="auth.password" placeholder="Password" autocomplete="current-password">
+        <div class="input-icon-wrap">
+          <span class="input-icon">🔒</span>
+          <input type="password" id="passwordInput" class="input" data-i18n-placeholder="auth.password" placeholder="Password" autocomplete="current-password">
+        </div>
       </div>
 
       <button id="authBtn" class="btn btn-primary btn-block" onclick="handleAuth()" data-i18n="auth.loginbtn">Login</button>
@@ -85,12 +105,18 @@
 
     var isRegisterMode = false;
 
+    function updateHeading() {
+      var h = document.getElementById('authHeading');
+      h.textContent = isRegisterMode ? __('auth.createAccount') : __('auth.welcomeBack');
+    }
+
     function toggleAuthMode() {
       isRegisterMode = !isRegisterMode;
       document.getElementById('registerFields').classList.toggle('hidden', !isRegisterMode);
       document.getElementById('authToggleText').textContent = isRegisterMode ? __('auth.hasaccount') : __('auth.noaccount');
       document.getElementById('authToggleLink').textContent = isRegisterMode ? __('auth.login') : __('auth.register');
       document.getElementById('authBtn').textContent = isRegisterMode ? __('auth.registerbtn') : __('auth.loginbtn');
+      updateHeading();
     }
 
     function handleAuth() {
@@ -101,7 +127,7 @@
       errorEl.textContent = '';
 
       if (!phone || !password) {
-        errorEl.textContent = __('common.error') + ': ' + __('auth.phone') + ' / ' + __('auth.password') + ' required';
+        errorEl.textContent = __('auth.phone') + ' / ' + __('auth.password') + ' ' + __('common.error').toLowerCase();
         errorEl.classList.remove('hidden');
         return;
       }
@@ -110,11 +136,10 @@
         var firstName = document.getElementById('firstNameInput').value.trim();
         var lastName = document.getElementById('lastNameInput').value.trim();
         var dob = document.getElementById('dobInput').value;
-        var gender = document.getElementById('genderInput').value;
         var location = document.getElementById('locationInput').value.trim();
 
         if (!firstName || !lastName || !dob || !location) {
-          errorEl.textContent = __('common.error') + ': ' + __('auth.firstName') + ', ' + __('auth.lastName') + ', ' + __('auth.dob') + ', ' + __('auth.location') + ' required';
+          errorEl.textContent = __('common.error') + ': ' + __('auth.firstName') + ', ' + __('auth.lastName') + ', ' + __('auth.dob') + ', ' + __('auth.location') + ' ' + __('common.required');
           errorEl.classList.remove('hidden');
           return;
         }
@@ -122,7 +147,7 @@
 
       var btn = document.getElementById('authBtn');
       btn.disabled = true;
-      btn.textContent = __('common.loading');
+      btn.innerHTML = '<span class="spinner"></span> ' + __('common.loading');
 
       var promise = isRegisterMode
         ? registerUser(
@@ -139,7 +164,8 @@
       promise.then(function () {
         window.location.href = 'index.html';
       }).catch(function (err) {
-        errorEl.textContent = err.message || __('advisor.error');
+        var msg = err && err.message === 'unauthorized' ? __('auth.invalidCredentials') : (err && err.message ? err.message : __('auth.genericError'));
+        errorEl.textContent = msg;
         errorEl.classList.remove('hidden');
         btn.disabled = false;
         btn.textContent = isRegisterMode ? __('auth.registerbtn') : __('auth.loginbtn');
@@ -150,6 +176,7 @@
       if (isLoggedIn()) {
         window.location.href = 'index.html';
       }
+      updateHeading();
     });
 
     ['passwordInput', 'phoneInput', 'dobInput', 'firstNameInput', 'lastNameInput', 'locationInput'].forEach(function (id) {

@@ -26,11 +26,8 @@ public class AuthService {
         }
 
         String token = jwtService.generateToken(farmer.getId());
+        String name = farmer.getFirstName() + " " + farmer.getLastName();
 
-        return new LoginResponse(
-                token,
-                farmer.getId()
-        );
+        return new LoginResponse(token, farmer.getId(), name);
     }
 }
-

@@ -1,4 +1,4 @@
-var CACHE_NAME = 'kilimowise-v1';
+var CACHE_NAME = 'kilimowise-v2';
 var STATIC_ASSETS = [
   '/',
   '/index.html',

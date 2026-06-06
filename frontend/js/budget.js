@@ -19,6 +19,11 @@ function getCategoryLabel(cat) {
   return labels[cat] || cat;
 }
 
+function getCategoryIcon(cat) {
+  var icons = { SEEDS: '🌱', FERTILIZER: '🧪', PESTICIDES: '🧴', VETERINARY: '🐄', LABOR: '👷', TRANSPORT: '🚚', OTHER: '📦' };
+  return icons[cat] || '📦';
+}
+
 function handleAddExpense() {
   var category = document.getElementById('expenseCategory').value;
   var amount = parseFloat(document.getElementById('expenseAmount').value);
@@ -28,7 +33,7 @@ function handleAddExpense() {
   errorEl.classList.add('hidden');
 
   if (!category || isNaN(amount) || amount <= 0) {
-    errorEl.textContent = __('common.error') + ': ' + __('budget.category') + ' & ' + __('budget.amount') + ' required';
+    errorEl.textContent = __('budget.category') + ' & ' + __('budget.amount') + ' ' + __('common.required');
     errorEl.classList.remove('hidden');
     return;
   }
@@ -36,7 +41,7 @@ function handleAddExpense() {
   var farmerId = getFarmerId();
   var btn = document.getElementById('addBtn');
   btn.disabled = true;
-  btn.textContent = __('common.loading');
+  btn.innerHTML = '<span class="spinner"></span> ' + __('common.loading');
 
   if (!isOfflineMode && farmerId) {
     addExpense(farmerId, category, amount, description).then(function () {
@@ -45,9 +50,14 @@ function handleAddExpense() {
       document.getElementById('expenseAmount').value = '';
       document.getElementById('expenseDescription').value = '';
       loadExpenses();
-      showToast('Expense added!', 'success');
-    }).catch(function () {
-      showToast('Backend unavailable, saving offline', 'info');
+      showToast(__('budget.addedSuccess'), 'success');
+    }).catch(function (err) {
+      if (err && err.message === 'unauthorized') {
+        showToast(__('auth.invalidCredentials'), 'error');
+        logout();
+        return;
+      }
+      showToast(__('budget.fallback'), 'info');
       fallbackAddExpense(category, amount, description);
       btn.disabled = false;
       btn.textContent = __('budget.add');
@@ -70,11 +80,12 @@ function fallbackAddExpense(category, amount, description) {
   });
   localStorage.setItem(EXPENSES_KEY, JSON.stringify(expenses));
   isOfflineMode = true;
-  document.getElementById('offlineBanner').classList.remove('hidden');
+  var banner = document.getElementById('offlineBanner');
+  if (banner) banner.classList.remove('hidden');
   document.getElementById('expenseAmount').value = '';
   document.getElementById('expenseDescription').value = '';
   loadExpenses();
-  showToast('Expense saved (offline)', 'info');
+  showToast(__('budget.savedOffline'), 'info');
 }
 
 function loadExpenses() {
@@ -83,8 +94,10 @@ function loadExpenses() {
   var totalEl = document.getElementById('totalExpenses');
   var emptyEl = document.getElementById('emptyState');
   var loadingEl = document.getElementById('loadingExpenses');
+  var containerEl = document.getElementById('expenseListContainer');
 
   loadingEl.classList.remove('hidden');
+  containerEl.classList.add('hidden');
   listEl.innerHTML = '';
   totalEl.textContent = 'KES 0.00';
 
@@ -93,28 +106,33 @@ function loadExpenses() {
       loadingEl.classList.add('hidden');
       if (!expenses || expenses.length === 0) {
         emptyEl.classList.remove('hidden');
+        containerEl.classList.add('hidden');
         return;
       }
       emptyEl.classList.add('hidden');
+      containerEl.classList.remove('hidden');
       renderExpenses(expenses);
     }).catch(function () {
-      fallbackLoadExpenses(loadingEl, emptyEl, listEl, totalEl);
+      fallbackLoadExpenses(loadingEl, emptyEl, listEl, totalEl, containerEl);
     });
   } else {
-    fallbackLoadExpenses(loadingEl, emptyEl, listEl, totalEl);
+    fallbackLoadExpenses(loadingEl, emptyEl, listEl, totalEl, containerEl);
   }
 }
 
-function fallbackLoadExpenses(loadingEl, emptyEl, listEl, totalEl) {
+function fallbackLoadExpenses(loadingEl, emptyEl, listEl, totalEl, containerEl) {
   var expenses = JSON.parse(localStorage.getItem(EXPENSES_KEY) || '[]');
   loadingEl.classList.add('hidden');
+  isOfflineMode = true;
+  var banner = document.getElementById('offlineBanner');
+  if (banner) banner.classList.remove('hidden');
   if (expenses.length === 0) {
     emptyEl.classList.remove('hidden');
+    containerEl.classList.add('hidden');
     return;
   }
   emptyEl.classList.add('hidden');
-  isOfflineMode = true;
-  document.getElementById('offlineBanner').classList.remove('hidden');
+  containerEl.classList.remove('hidden');
   renderExpenses(expenses);
 }
 
@@ -125,16 +143,17 @@ function renderExpenses(expenses) {
 
   listEl.innerHTML = '';
   expenses.forEach(function (exp) {
-    total += parseFloat(exp.amount) || 0;
+    var amt = parseFloat(exp.amount) || 0;
+    total += amt;
     var div = document.createElement('div');
     div.className = 'expense-item';
     div.innerHTML =
       '<div class="expense-left">' +
-        '<div><span class="badge badge-category">' + escapeHtml(getCategoryLabel(exp.category)) + '</span></div>' +
-        '<div class="expense-desc">' + escapeHtml(exp.description || '') + '</div>' +
+        '<div class="expense-category"><span class="badge badge-category">' + getCategoryIcon(exp.category) + ' ' + escapeHtml(getCategoryLabel(exp.category)) + '</span></div>' +
+        '<div class="expense-desc">' + escapeHtml(exp.description || '—') + '</div>' +
         '<div class="expense-date">' + formatDate(exp.expenseDate) + '</div>' +
       '</div>' +
-      '<div class="expense-amount">' + formatCurrency(exp.amount) + '</div>';
+      '<div class="expense-amount">' + formatCurrency(amt) + '</div>';
     listEl.appendChild(div);
   });
 

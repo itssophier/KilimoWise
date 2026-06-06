@@ -1,6 +1,6 @@
 package com.example.kilimosmart.advisory.service;
 
-import com.example.kilimosmart.advisory.dto.AdvisoryInputDto;
+import com.example.kilimosmart.advisory.dto.AdvisoryInput;
 import com.example.kilimosmart.advisory.dto.AdvisoryResponseDto;
 import com.example.kilimosmart.advisory.model.Advisory;
 import com.example.kilimosmart.advisory.repository.AdvisoryRepository;
@@ -19,7 +19,7 @@ public class AdvisoryService {
     private final GeminiServiceAPI geminiServiceAPI;
 
     @Transactional
-    public AdvisoryResponseDto analyzeProblem(AdvisoryInputDto input) {
+    public AdvisoryResponseDto analyzeProblem(AdvisoryInput input) {
 
         Farmer farmer = farmerRepository.findById(input.farmerId())
                 .orElseThrow(() -> new RuntimeException("Farmer not found"));
