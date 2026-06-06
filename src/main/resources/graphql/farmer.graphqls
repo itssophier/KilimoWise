@@ -1,0 +1,34 @@
+enum Gender {
+    MALE
+    FEMALE
+    OTHER
+}
+
+type Farmer {
+    id: ID!
+    firstName: String!
+    lastName: String!
+    phoneNumber: String!
+    dob: String
+    age: Int
+    gender: Gender
+    location: String
+}
+
+input RegisterFarmerInput {
+    firstName: String!
+    lastName: String!
+    phoneNumber: String!
+    dob: String!
+    gender: String!
+    location: String!
+}
+
+extend type Query {
+    farmers: [Farmer]
+    farmer(id: ID!): Farmer
+}
+
+extend type Mutation {
+    registerFarmer(input: RegisterFarmerInput!): Farmer
+}

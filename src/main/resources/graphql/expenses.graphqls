@@ -1,0 +1,33 @@
+enum ExpensesCategory {
+    SEEDS
+    FERTILIZER
+    PESTICIDES
+    VETERINARY
+    LABOR
+    TRANSPORT
+    OTHER
+}
+
+type Expenses {
+    id: ID!
+    category: ExpensesCategory!
+    amount: Float!
+    description: String
+    expenseDate: String
+}
+
+input ExpensesInput {
+    farmerId: ID!
+    category: ExpensesCategory!
+    amount: Float!
+    description: String!
+    expenseDate: String
+}
+
+extend type Query {
+    getExpense(farmerId: ID!): [Expenses]
+}
+
+extend type Mutation {
+    addExpense(input: ExpensesInput!): Expenses
+}
