@@ -29,6 +29,6 @@ public class FarmerController {
 
     @QueryMapping
     public Farmer farmer(@Argument Long id) {
-        return (Farmer) farmerService.getFarmerById(id);
+        return farmerService.getFarmerById(id);
     }
 }

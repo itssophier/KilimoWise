@@ -25,17 +25,6 @@ input RegisterFarmerInput {
     password: String!
 }
 
-input LoginRequest {
-    phone: String!
-    password: String!
-}
-
-type LoginResponse {
-    token: String!
-    farmerId: ID!
-    name: String!
-}
-
 extend type Query {
     farmers: [Farmer]
     farmer(id: ID!): Farmer
@@ -43,5 +32,4 @@ extend type Query {
 
 extend type Mutation {
     registerFarmer(input: RegisterFarmerInput!): Farmer
-    login(input: LoginRequest!): LoginResponse
 }

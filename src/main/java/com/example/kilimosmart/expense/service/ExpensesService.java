@@ -9,7 +9,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -24,15 +23,13 @@ public class ExpensesService {
         Farmer farmer = farmerRepository.findById(input.farmerId())
                 .orElseThrow(() -> new RuntimeException("Farmer not found"));
 
+        LocalDate date = input.expenseDate() != null ? input.expenseDate() : LocalDate.now();
+
         Expenses expense = Expenses.builder()
                 .category(input.category())
                 .amount(input.amount())
                 .description(input.description())
-                .expenseDate(
-                        LocalDateTime.from(input.expenseDate() != null
-                                ? input.expenseDate()
-                                : LocalDate.now())
-                )
+                .expenseDate(date.atStartOfDay())
                 .farmer(farmer)
                 .build();
 

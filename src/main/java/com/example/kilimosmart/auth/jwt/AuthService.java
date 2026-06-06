@@ -18,7 +18,7 @@ public class AuthService {
 
     public LoginResponse login(LoginRequest request) {
 
-        Farmer farmer = farmerRepository.findByPhoneNumber(request.phone())
+        Farmer farmer = farmerRepository.findByPhoneNumber(request.phoneNumber())
                 .orElseThrow(() -> new RuntimeException("Invalid credentials"));
 
         if (!passwordEncoder.matches(request.password(), farmer.getPassword())) {
@@ -29,8 +29,8 @@ public class AuthService {
 
         return new LoginResponse(
                 token,
-                farmer.getId(),
-                farmer.getFirstName()
+                farmer.getId()
         );
     }
 }
+

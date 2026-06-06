@@ -2,11 +2,11 @@ package com.example.kilimosmart.advisory.service;
 
 import com.example.kilimosmart.advisory.dto.AdvisoryResponseDto;
 import com.example.kilimosmart.config.GeminiProperties;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
+import tools.jackson.databind.ObjectMapper;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,7 +36,7 @@ public class GeminiServiceAPI {
                     .retrieve()
                     .body(String.class);
 
-            log.info("Gemini RAW RESPONSE: {}", response);
+            log.debug("Gemini RAW RESPONSE: {}", response);
 
             var root = objectMapper.readTree(response);
 

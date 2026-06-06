@@ -40,8 +40,9 @@ public class FarmerService {
     }
 
 
-    public List<Farmer> getFarmerById(Long farmerId) {
-        return farmerRepository.findFarmerBy(farmerId);
+    public Farmer getFarmerById(Long farmerId) {
+        return farmerRepository.findById(farmerId)
+                .orElseThrow(() -> new RuntimeException("Farmer not found"));
     }
 
 }

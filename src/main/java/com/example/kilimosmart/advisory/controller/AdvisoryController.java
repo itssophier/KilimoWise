@@ -1,4 +1,4 @@
-package com.example.kilimosmart.advisory.contoller;
+package com.example.kilimosmart.advisory.controller;
 
 import com.example.kilimosmart.advisory.dto.AdvisoryInputDto;
 import com.example.kilimosmart.advisory.dto.AdvisoryResponseDto;

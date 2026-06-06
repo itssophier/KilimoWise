@@ -8,6 +8,7 @@ import com.example.kilimosmart.farmer.entity.Farmer;
 import com.example.kilimosmart.farmer.repository.FarmerRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -17,22 +18,23 @@ public class AdvisoryService {
     private final FarmerRepository farmerRepository;
     private final GeminiServiceAPI geminiServiceAPI;
 
+    @Transactional
     public AdvisoryResponseDto analyzeProblem(AdvisoryInputDto input) {
 
         Farmer farmer = farmerRepository.findById(input.farmerId())
                 .orElseThrow(() -> new RuntimeException("Farmer not found"));
 
         AdvisoryResponseDto response = geminiServiceAPI.analyze(
-                input.type().name(),   // ✅ FIXED
+                input.type().name(),
                 input.description(),
                 input.imageBase64()
         );
 
         Advisory advisory = Advisory.builder()
                 .farmer(farmer)
-                .type(input.type())   // ✅ FIXED
+                .type(input.type())
                 .problemDescription(input.description())
-                .aiResponse(response.solution()) // ✅ FIXED (record access)
+                .aiResponse(response.solution())
                 .build();
 
         advisoryRepository.save(advisory);
