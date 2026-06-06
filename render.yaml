@@ -35,12 +35,4 @@ services:
           name: kilimowise-db
           property: password
 
-  - type: web
-    name: kilimowise-frontend
-    runtime: docker
-    dockerfilePath: frontend/Dockerfile
-    dockerContext: frontend
-    plan: free
-    envVars:
-      - key: GRAPHQL_URL
-        value: https://kilimowise-backend.onrender.com/graphql
+
