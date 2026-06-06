@@ -2,97 +2,154 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="theme-color" content="#16a34a">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0e3a23" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0a0d0a" media="(prefers-color-scheme: dark)">
+  <meta name="description" content="KiliMoWise — AI-powered crop and animal advice, expense tracking, and seasonal insights for Kenyan farmers.">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="KiliMoWise">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="format-detection" content="telephone=no">
+
   <title data-i18n="dashboard.title">Dashboard · KiliMoWise</title>
+
   <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
-  <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' fill='%2316a34a'/%3E%3Ctext x='96' y='140' font-size='120' text-anchor='middle' fill='white'%3E🌾%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap">
+
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/app.css">
+
   <script src="config.js"></script>
+  <script src="js/icons.js"></script>
   <script src="js/i18n.js"></script>
   <script src="js/utils.js"></script>
   <script src="js/api.js"></script>
   <script src="js/auth.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/shell.js"></script>
   <script src="js/dashboard.js"></script>
+
   <script>
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('service-worker.js');
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('service-worker.js').catch(function () {});
+      });
     }
   </script>
 </head>
 <body>
-  <header class="app-header">
-    <div class="header-brand">
-      <span class="brand-mark">🌾</span>
-      <span data-i18n="app.name">KiliMoWise</span>
-    </div>
-    <div class="header-actions">
-      <button class="lang-pill" onclick="toggleLanguage()">EN / SW</button>
-      <button class="ghost-btn" onclick="logout()" data-i18n="auth.logout">Logout</button>
-    </div>
-  </header>
-
-  <main class="container">
-    <section class="hero fade-up">
-      <div class="hero-greeting" data-i18n="auth.welcome">Karibu</div>
-      <div class="hero-name" id="welcomeName">Farmer</div>
-      <div class="hero-sub" data-i18n="dashboard.heroSub">Your farm's smart companion — ask, track, and grow.</div>
+  <main class="page">
+    <section class="hero scale-in" id="heroSection">
+      <div class="hero-eyebrow" data-i18n="dashboard.heroEyebrow">Today on the farm</div>
+      <h1 class="hero-title" id="heroGreeting"><span data-i18n="dashboard.heroGreeting">Welcome back</span><span id="heroNameWrap">, <em id="heroName">Farmer</em></span></h1>
+      <p class="hero-sub" data-i18n="dashboard.heroSub">Your farm's smart companion — ask, track, and grow with confidence.</p>
+      <div class="hero-actions">
+        <a href="advisor.html" class="btn btn-primary">
+          <span id="ctaAskIcon"></span>
+          <span data-i18n="dashboard.ctaAsk">Ask the advisor</span>
+        </a>
+        <a href="budget.html" class="btn btn-outline">
+          <span id="ctaTrackIcon"></span>
+          <span data-i18n="dashboard.ctaTrack">Track an expense</span>
+        </a>
+      </div>
     </section>
 
-    <div class="summary-card fade-up" id="summaryCard">
-      <div class="summary-icon">💰</div>
-      <div class="summary-content">
-        <div class="summary-label" data-i18n="dashboard.totalExpenses">Total Expenses</div>
-        <div id="expenseSummary" class="summary-value skeleton-line">—</div>
+    <section class="stat-grid stagger mb-5">
+      <div class="stat-tile">
+        <div class="stat-icon" id="iconTotal"></div>
+        <div class="stat-label" data-i18n="dashboard.thisMonth">This month</div>
+        <div class="stat-value num" id="statThisMonth">KES 0</div>
       </div>
-    </div>
-
-    <div id="diagnosisSection" class="card diagnosis-card hidden fade-up">
-      <div class="card-title">
-        <span class="card-title-icon">🩺</span>
-        <span data-i18n="dashboard.recentDiagnosis">Recent Diagnosis</span>
+      <div class="stat-tile alt">
+        <div class="stat-icon" id="iconLast"></div>
+        <div class="stat-label" data-i18n="dashboard.lastMonth">Last month</div>
+        <div class="stat-value stat-value-muted num" id="statLastMonth">KES 0</div>
       </div>
-      <p id="diagnosisPreview" class="text-secondary" style="font-size:0.92rem;line-height:1.5;"></p>
-      <button class="btn btn-ghost btn-block mt-16" onclick="window.location.href='advisor.html'" data-i18n="dashboard.viewAdvisor">View in Advisor</button>
-    </div>
-
-    <div class="tip-card fade-up">
-      <div class="tip-icon">💡</div>
-      <div class="tip-body">
-        <div class="tip-title" data-i18n="dashboard.latestTip">Farming Tip</div>
-        <div id="tipContent" class="tip-content">Rotate crops every season to maintain soil fertility and reduce pest buildup.</div>
+      <div class="stat-tile info">
+        <div class="stat-icon" id="iconTop"></div>
+        <div class="stat-label" data-i18n="dashboard.topCategory">Top category</div>
+        <div class="stat-value stat-value-sm" id="statTopCategory">—</div>
       </div>
-    </div>
+      <div class="stat-tile">
+        <div class="stat-icon" id="iconChange"></div>
+        <div class="stat-label" data-i18n="dashboard.monthChange">vs last month</div>
+        <div class="stat-value num" id="statMonthChange">0%</div>
+      </div>
+    </section>
 
-    <h3 class="section-title">
-      <span data-i18n="dashboard.quickActions">Quick Actions</span>
-    </h3>
-    <div class="quick-actions fade-up">
-      <a href="advisor.html" class="action-card">
-        <span class="action-icon">🤖</span>
-        <span class="action-label" data-i18n="nav.advisor">Advisor</span>
+    <section class="card card-feature fade-up" id="tipCard">
+      <div class="flex justify-between items-center mb-2">
+        <span class="eyebrow accent" data-i18n="dashboard.latestTip">Today's tip</span>
+        <span id="tipIcon" style="color: var(--harvest-300);"></span>
+      </div>
+      <p id="tipContent" style="font-family: var(--font-display); font-size: var(--text-lg); line-height: var(--leading-snug); color: #f3eedd;">—</p>
+    </section>
+
+    <section id="diagnosisSection" class="card hidden fade-up mt-5">
+      <div class="card-header">
+        <div>
+          <div class="eyebrow" data-i18n="dashboard.recentDiagnosis">Recent diagnosis</div>
+          <div class="card-title" id="diagnosisTitle" style="margin-top: 4px;">—</div>
+        </div>
+        <span class="badge primary" id="diagnosisBadge">—</span>
+      </div>
+      <p id="diagnosisPreview" class="text-secondary" style="font-size: var(--text-sm); line-height: var(--leading-relaxed);"></p>
+      <a href="advisor.html" class="btn btn-ghost btn-sm mt-4">
+        <span data-i18n="dashboard.viewAdvisor">Open advisor</span>
+        <span id="diagnosisArrow"></span>
       </a>
-      <a href="budget.html" class="action-card alt">
-        <span class="action-icon">💰</span>
-        <span class="action-label" data-i18n="nav.budget">Budget</span>
+    </section>
+
+    <h3 class="eyebrow mt-6 mb-3" data-i18n="dashboard.quickActions">Quick actions</h3>
+    <section class="stat-grid stagger">
+      <a href="advisor.html" class="stat-tile interactive" style="text-decoration: none;">
+        <div class="stat-icon" id="qaAdvisor"></div>
+        <div class="stat-label" data-i18n="dashboard.openAdvisor">Open advisor</div>
+        <div class="stat-value-sm text-secondary mt-1" data-i18n="advisor.title">AI Advisor</div>
       </a>
-      <a href="insights.html" class="action-card info">
-        <span class="action-icon">📊</span>
-        <span class="action-label" data-i18n="nav.insights">Insights</span>
+      <a href="budget.html" class="stat-tile alt interactive" style="text-decoration: none;">
+        <div class="stat-icon" id="qaBudget"></div>
+        <div class="stat-label" data-i18n="dashboard.addExpense">Add expense</div>
+        <div class="stat-value-sm text-secondary mt-1" data-i18n="budget.title">Budget</div>
       </a>
-    </div>
+      <a href="insights.html" class="stat-tile info interactive" style="text-decoration: none;">
+        <div class="stat-icon" id="qaInsights"></div>
+        <div class="stat-label" data-i18n="dashboard.viewInsights">View insights</div>
+        <div class="stat-value-sm text-secondary mt-1" data-i18n="insights.title">Insights</div>
+      </a>
+      <a href="profile.html" class="stat-tile interactive" style="text-decoration: none;">
+        <div class="stat-icon" id="qaProfile"></div>
+        <div class="stat-label" data-i18n="nav.profile">Profile</div>
+        <div class="stat-value-sm text-secondary mt-1" data-i18n="profile.title">Your profile</div>
+      </a>
+    </section>
   </main>
 
-  <nav class="bottom-nav">
-    <a href="index.html" class="nav-item active"><span class="nav-icon">🏠</span><span data-i18n="nav.home">Home</span></a>
-    <a href="advisor.html" class="nav-item"><span class="nav-icon">🤖</span><span data-i18n="nav.advisor">Advisor</span></a>
-    <a href="budget.html" class="nav-item"><span class="nav-icon">💰</span><span data-i18n="nav.budget">Budget</span></a>
-    <a href="insights.html" class="nav-item"><span class="nav-icon">📊</span><span data-i18n="nav.insights">Insights</span></a>
-  </nav>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      // Inject inline icons into elements
+      var placeIcon = function (el, name) { if (el) el.appendChild(window.svg(name, 20)); };
+      placeIcon(document.getElementById('iconTotal'), 'wallet');
+      placeIcon(document.getElementById('iconLast'), 'calendar');
+      placeIcon(document.getElementById('iconTop'), 'tag');
+      placeIcon(document.getElementById('iconChange'), 'trending-up');
+      placeIcon(document.getElementById('tipIcon'), 'sun');
+      placeIcon(document.getElementById('ctaAskIcon'), 'sparkles');
+      placeIcon(document.getElementById('ctaTrackIcon'), 'plus');
+      placeIcon(document.getElementById('diagnosisArrow'), 'arrow-right');
+      placeIcon(document.getElementById('qaAdvisor'), 'sparkles');
+      placeIcon(document.getElementById('qaBudget'), 'wallet');
+      placeIcon(document.getElementById('qaInsights'), 'chart');
+      placeIcon(document.getElementById('qaProfile'), 'user');
+    });
+  </script>
+  <noscript><div style="display:flex;align-items:center;justify-content:center;min-height:60vh;text-align:center;padding:24px;font-family:system-ui,sans-serif;color:#0e3a23"><div><h1 style="margin:0 0 8px">KiliMoWise</h1><p>Please enable JavaScript to use this app.</p></div></div></noscript>
 </body>
 </html>

@@ -2,86 +2,150 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="theme-color" content="#16a34a">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0e3a23" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0a0d0a" media="(prefers-color-scheme: dark)">
+  <meta name="description" content="Seasonal, market, and practical advice for your farm">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
   <title data-i18n="insights.title">Insights · KiliMoWise</title>
+
   <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
-  <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' fill='%2316a34a'/%3E%3Ctext x='96' y='140' font-size='120' text-anchor='middle' fill='white'%3E🌾%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap">
+
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/app.css">
+
+  <style>
+    .insight-card {
+      background: var(--surface);
+      border: 1px solid var(--border-soft);
+      border-radius: var(--r-lg);
+      padding: var(--s-5);
+      transition: border-color var(--dur-base) var(--ease-out), box-shadow var(--dur-base) var(--ease-out), transform var(--dur-base) var(--ease-out);
+      position: relative;
+      overflow: hidden;
+    }
+    .insight-card::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 3px;
+      background: var(--primary);
+    }
+    .insight-card.alt::before { background: var(--accent); }
+    .insight-card.info::before { background: var(--info); }
+    .insight-card h3 {
+      font-family: var(--font-display);
+      font-size: var(--text-md);
+      font-weight: 500;
+      letter-spacing: var(--tracking-tight);
+      margin-bottom: var(--s-2);
+    }
+    .insight-card p {
+      font-size: var(--text-sm);
+      color: var(--text-secondary);
+      line-height: var(--leading-relaxed);
+    }
+  </style>
+
   <script src="config.js"></script>
+  <script src="js/icons.js"></script>
   <script src="js/i18n.js"></script>
   <script src="js/utils.js"></script>
   <script src="js/api.js"></script>
   <script src="js/auth.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/shell.js"></script>
   <script src="js/insights.js"></script>
+
   <script>
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('service-worker.js');
+      window.addEventListener('load', function () { navigator.serviceWorker.register('service-worker.js').catch(function () {}); });
     }
   </script>
 </head>
 <body>
-  <header class="app-header">
-    <button class="back-btn" onclick="window.location.href='index.html'" aria-label="Back">←</button>
-    <h1 data-i18n="insights.title">Farming Insights</h1>
-    <button class="lang-pill" onclick="toggleLanguage()">EN / SW</button>
-  </header>
+  <div data-topbar></div>
 
-  <main class="container">
-    <div class="insight-refresh-bar fade-up">
-      <div id="insightMeta" class="cached-info"></div>
-      <button id="refreshInsightsBtn" class="btn-link" onclick="refreshInsights()">↻ <span data-i18n="insights.refresh">Refresh</span></button>
-    </div>
+  <main class="page">
+    <header class="page-header">
+      <div>
+        <small data-i18n="dashboard.heroEyebrow">Today on the farm</small>
+        <h1 class="page-title" data-i18n="insights.title">Farming insights</h1>
+        <p class="text-secondary mt-2" style="max-width: 56ch;" data-i18n="insights.subtitle">Seasonal, market, and practical advice for your farm</p>
+      </div>
+      <div class="page-actions">
+        <span class="badge" id="insightMeta"></span>
+        <button id="refreshInsightsBtn" class="btn btn-outline btn-sm" onclick="refreshInsights()">
+          <span id="refreshIcon"></span>
+          <span data-i18n="insights.refresh">Refresh</span>
+        </button>
+      </div>
+    </header>
 
     <div id="loadingState" class="loading-state">
       <div class="spinner lg"></div>
-      <p data-i18n="insights.generating">Generating personalized insights...</p>
+      <p data-i18n="insights.generating">Generating personalized insights…</p>
     </div>
 
     <section class="insight-section">
-      <h3 class="section-title">
-        <span>🌾 <span data-i18n="insights.seasonal">Seasonal Tips</span></span>
-      </h3>
-      <div id="seasonsList"></div>
-      <div id="seasonsEmpty" class="empty-state hidden">
-        <span class="empty-icon">🌾</span>
-        <p data-i18n="insights.empty">No insights available yet</p>
+      <h2 class="eyebrow accent mb-3">
+        <span id="seasonIcon" style="display:inline-flex;vertical-align:-3px;margin-right:6px;color:var(--accent);"></span>
+        <span data-i18n="insights.seasonal">Seasonal tips</span>
+      </h2>
+      <div id="seasonsList" class="stagger" style="display: flex; flex-direction: column; gap: var(--s-3);"></div>
+      <div id="seasonsEmpty" class="card empty-state hidden">
+        <div class="empty-art" id="seasonArt"></div>
+        <h3 data-i18n="insights.emptyTitle">Nothing to show yet</h3>
+        <p data-i18n="insights.emptyHint">Insights will appear once the AI has enough information about your farm.</p>
       </div>
     </section>
 
-    <section class="insight-section">
-      <h3 class="section-title">
-        <span>📈 <span data-i18n="insights.market">Market Insights</span></span>
-      </h3>
-      <div id="marketList"></div>
-      <div id="marketEmpty" class="empty-state hidden">
-        <span class="empty-icon">📈</span>
-        <p data-i18n="insights.empty">No insights available yet</p>
+    <section class="insight-section mt-6">
+      <h2 class="eyebrow mb-3" style="color: var(--info);">
+        <span id="marketIcon" style="display:inline-flex;vertical-align:-3px;margin-right:6px;color:var(--info);"></span>
+        <span data-i18n="insights.market">Market insights</span>
+      </h2>
+      <div id="marketList" class="stagger" style="display: flex; flex-direction: column; gap: var(--s-3);"></div>
+      <div id="marketEmpty" class="card empty-state hidden">
+        <div class="empty-art" id="marketArt"></div>
+        <h3 data-i18n="insights.emptyTitle">Nothing to show yet</h3>
+        <p data-i18n="insights.emptyHint">Insights will appear once the AI has enough information about your farm.</p>
       </div>
     </section>
 
-    <section class="insight-section">
-      <h3 class="section-title">
-        <span>💡 <span data-i18n="insights.tips">Farming Advice</span></span>
-      </h3>
-      <div id="tipsList"></div>
-      <div id="tipsEmpty" class="empty-state hidden">
-        <span class="empty-icon">💡</span>
-        <p data-i18n="insights.empty">No insights available yet</p>
+    <section class="insight-section mt-6">
+      <h2 class="eyebrow primary mb-3">
+        <span id="tipsIcon" style="display:inline-flex;vertical-align:-3px;margin-right:6px;color:var(--primary);"></span>
+        <span data-i18n="insights.tips">Farming advice</span>
+      </h2>
+      <div id="tipsList" class="stagger" style="display: flex; flex-direction: column; gap: var(--s-3);"></div>
+      <div id="tipsEmpty" class="card empty-state hidden">
+        <div class="empty-art" id="tipsArt"></div>
+        <h3 data-i18n="insights.emptyTitle">Nothing to show yet</h3>
+        <p data-i18n="insights.emptyHint">Insights will appear once the AI has enough information about your farm.</p>
       </div>
     </section>
   </main>
 
-  <nav class="bottom-nav">
-    <a href="index.html" class="nav-item"><span class="nav-icon">🏠</span><span data-i18n="nav.home">Home</span></a>
-    <a href="advisor.html" class="nav-item"><span class="nav-icon">🤖</span><span data-i18n="nav.advisor">Advisor</span></a>
-    <a href="budget.html" class="nav-item"><span class="nav-icon">💰</span><span data-i18n="nav.budget">Budget</span></a>
-    <a href="insights.html" class="nav-item active"><span class="nav-icon">📊</span><span data-i18n="nav.insights">Insights</span></a>
-  </nav>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      var placeIcon = function (el, name, size) { if (el) el.appendChild(window.svg(name, size || 16)); };
+      placeIcon(document.getElementById('refreshIcon'), 'refresh', 16);
+      placeIcon(document.getElementById('seasonIcon'), 'sun-rise', 16);
+      placeIcon(document.getElementById('marketIcon'), 'chart', 16);
+      placeIcon(document.getElementById('tipsIcon'), 'sparkle', 16);
+      placeIcon(document.getElementById('seasonArt'), 'sun-rise', 80);
+      placeIcon(document.getElementById('marketArt'), 'chart', 80);
+      placeIcon(document.getElementById('tipsArt'), 'sparkle', 80);
+    });
+  </script>
 </body>
 </html>

@@ -24,7 +24,12 @@ function graphqlRequest(query, variables) {
     return res.json();
   }).then(function (json) {
     if (json.errors && json.errors.length) {
-      throw new Error(json.errors[0].message);
+      var code = (json.errors[0].extensions && json.errors[0].extensions.code) || 'ERROR';
+      var msg = json.errors[0].message || 'Request failed';
+      var err = new Error(msg);
+      err.code = code;
+      err.extensions = json.errors[0].extensions;
+      throw err;
     }
     return json.data;
   });
@@ -42,6 +47,13 @@ function registerFarmer(firstName, lastName, phoneNumber, dob, gender, location,
     'mutation Register($input: RegisterFarmerInput!) { registerFarmer(input: $input) { id firstName lastName phoneNumber dob age gender location } }',
     { input: { firstName: firstName, lastName: lastName, phoneNumber: phoneNumber, dob: dob, gender: gender, location: location, password: password } }
   ).then(function (data) { return data.registerFarmer; });
+}
+
+function getFarmerProfile(farmerId) {
+  return graphqlRequest(
+    'query GetFarmer($id: ID!) { farmer(id: $id) { id firstName lastName phoneNumber dob age gender location } }',
+    { id: farmerId }
+  ).then(function (data) { return data.farmer; });
 }
 
 function analyzeProblem(farmerId, type, description, imageBase64) {

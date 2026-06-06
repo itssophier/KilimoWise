@@ -2,9 +2,9 @@ var INSIGHTS_CACHE_KEY = 'kilimowise_insights_cache';
 var INSIGHTS_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
 
 var STATIC_SEASONS = [
-  { crop: 'Maize', season: 'Long Rains', description: 'Plant maize from March to May for best yields. Prepare soil with organic compost 2 weeks before planting.' },
-  { crop: 'Wheat', season: 'Dry Season', description: 'Best planted from June to August. Requires well-drained soil and moderate irrigation.' },
-  { crop: 'Beans', season: 'Short Rains', description: 'Plant beans from October to December. Intercrop with maize for better land utilization.' }
+  { title: 'Maize — Long Rains', content: 'Plant maize from March to May for best yields. Prepare soil with organic compost 2 weeks before planting.' },
+  { title: 'Wheat — Dry Season', content: 'Best planted from June to August. Requires well-drained soil and moderate irrigation.' },
+  { title: 'Beans — Short Rains', content: 'Plant beans from October to December. Intercrop with maize for better land utilization.' }
 ];
 
 var STATIC_MARKET = [
@@ -20,15 +20,10 @@ var STATIC_TIPS = [
 ];
 
 var fallbackInsights = {
-  seasonal: STATIC_SEASONS.map(function (s) { return { title: s.crop + ' — ' + s.season, content: s.description }; }),
+  seasonal: STATIC_SEASONS,
   market: STATIC_MARKET,
   tips: STATIC_TIPS
 };
-
-document.addEventListener('DOMContentLoaded', function () {
-  redirectIfNotLoggedIn();
-  loadInsights();
-});
 
 function loadInsights(forceRefresh) {
   showLoading(true);
@@ -38,7 +33,7 @@ function loadInsights(forceRefresh) {
   if (!forceRefresh && cached && isCacheFresh(cached)) {
     showLoading(false);
     renderInsights(cached.payload);
-    showMeta(formatRelativeTime(cached.savedAt), false);
+    showMeta(__('insights.cached') + ' · ' + formatRelativeTime(cached.savedAt), false);
     return;
   }
 
@@ -67,12 +62,12 @@ function loadInsights(forceRefresh) {
     var payload = normalizeInsights(data);
     renderInsights(payload);
     cacheInsights({ payload: payload, savedAt: Date.now() });
-    showMeta(formatRelativeTime(Date.now()), false);
+    showMeta(__('insights.cached') + ' · ' + __('common.justNow').replace('common.justNow', 'just now'), false);
   }).catch(function () {
     showLoading(false);
     if (cached && cached.payload) {
       renderInsights(cached.payload);
-      showMeta('Offline · ' + formatRelativeTime(cached.savedAt), true);
+      showMeta(__('insights.offline') + ' · ' + formatRelativeTime(cached.savedAt), true);
     } else {
       renderInsights(fallbackInsights);
       showMeta('—', true);
@@ -85,18 +80,16 @@ function refreshInsights() {
 }
 
 function normalizeInsights(data) {
-  function toItems(arr, withTitle) {
+  function toItems(arr) {
     if (!arr) return [];
     return arr.map(function (x) {
-      return withTitle
-        ? { title: x.title || '', content: x.content || '' }
-        : { content: x.content || '' };
+      return { title: x.title || '', content: x.content || '' };
     }).filter(function (x) { return x.content; });
   }
   return {
-    seasonal: toItems(data.seasonal, true),
-    market: toItems(data.market, true),
-    tips: toItems(data.tips, false)
+    seasonal: toItems(data.seasonal),
+    market: toItems(data.market),
+    tips: toItems(data.tips)
   };
 }
 
@@ -109,21 +102,22 @@ function renderInsights(data) {
 function renderSeasons(seasons) {
   var el = document.getElementById('seasonsList');
   var empty = document.getElementById('seasonsEmpty');
+  if (!el) return;
   el.innerHTML = '';
 
   if (!seasons || seasons.length === 0) {
-    empty.classList.remove('hidden');
+    if (empty) empty.classList.remove('hidden');
     return;
   }
-  empty.classList.add('hidden');
+  if (empty) empty.classList.add('hidden');
 
   seasons.forEach(function (s) {
     var card = document.createElement('div');
     card.className = 'insight-card alt fade-up';
     card.innerHTML =
-      '<div class="flex-between mb-8">' +
+      '<div class="flex justify-between items-center mb-2">' +
         '<h3>' + escapeHtml(s.title || '—') + '</h3>' +
-        '<span class="badge badge-season">📅 ' + __('insights.seasonal') + '</span>' +
+        '<span class="badge accent">' + __('insights.seasonal') + '</span>' +
       '</div>' +
       '<p>' + escapeHtml(s.content || '') + '</p>';
     el.appendChild(card);
@@ -133,19 +127,23 @@ function renderSeasons(seasons) {
 function renderMarket(market) {
   var el = document.getElementById('marketList');
   var empty = document.getElementById('marketEmpty');
+  if (!el) return;
   el.innerHTML = '';
 
   if (!market || market.length === 0) {
-    empty.classList.remove('hidden');
+    if (empty) empty.classList.remove('hidden');
     return;
   }
-  empty.classList.add('hidden');
+  if (empty) empty.classList.add('hidden');
 
   market.forEach(function (m) {
     var card = document.createElement('div');
     card.className = 'insight-card info fade-up';
     card.innerHTML =
-      '<h3>' + escapeHtml(m.title || '—') + '</h3>' +
+      '<div class="flex justify-between items-center mb-2">' +
+        '<h3>' + escapeHtml(m.title || '—') + '</h3>' +
+        '<span class="badge info">' + __('insights.market') + '</span>' +
+      '</div>' +
       '<p>' + escapeHtml(m.content || '') + '</p>';
     el.appendChild(card);
   });
@@ -154,22 +152,23 @@ function renderMarket(market) {
 function renderTips(tips) {
   var el = document.getElementById('tipsList');
   var empty = document.getElementById('tipsEmpty');
+  if (!el) return;
   el.innerHTML = '';
 
   if (!tips || tips.length === 0) {
-    empty.classList.remove('hidden');
+    if (empty) empty.classList.remove('hidden');
     return;
   }
-  empty.classList.add('hidden');
+  if (empty) empty.classList.add('hidden');
 
   tips.forEach(function (t, i) {
     var card = document.createElement('div');
     card.className = 'insight-card fade-up';
     var titleText = t.title && t.title.trim() ? t.title : ('💡 ' + __('insights.tips') + ' ' + (i + 1));
     card.innerHTML =
-      '<div class="flex-between mb-8">' +
+      '<div class="flex justify-between items-center mb-2">' +
         '<h3>' + escapeHtml(titleText) + '</h3>' +
-        '<span class="badge badge-confidence">' + __('insights.tips') + '</span>' +
+        '<span class="badge primary">' + __('insights.tips') + '</span>' +
       '</div>' +
       '<p>' + escapeHtml(t.content || '—') + '</p>';
     el.appendChild(card);
@@ -177,19 +176,22 @@ function renderTips(tips) {
 }
 
 function showLoading(show) {
-  document.getElementById('loadingState').classList.toggle('hidden', !show);
+  var el = document.getElementById('loadingState');
+  if (el) el.classList.toggle('hidden', !show);
 }
 
 function showMeta(text, isFallback) {
   var el = document.getElementById('insightMeta');
   if (!el) return;
-  el.textContent = (isFallback ? '⚠ ' : '✓ ') + text;
-  el.style.color = isFallback ? 'var(--text-muted)' : 'var(--primary)';
+  el.innerHTML = '';
+  var ic = window.svg(isFallback ? 'wifi-off' : 'check', 12);
+  el.appendChild(ic);
+  el.appendChild(document.createTextNode(' ' + text));
 }
 
 function hideMeta() {
   var el = document.getElementById('insightMeta');
-  if (el) el.textContent = '';
+  if (el) el.innerHTML = '';
 }
 
 function formatRelativeTime(ts) {
@@ -210,9 +212,10 @@ function cacheInsights(data) {
 }
 
 function getCachedInsights() {
-  try {
-    return JSON.parse(localStorage.getItem(INSIGHTS_CACHE_KEY));
-  } catch (e) {
-    return null;
-  }
+  try { return JSON.parse(localStorage.getItem(INSIGHTS_CACHE_KEY)); } catch (e) { return null; }
 }
+
+document.addEventListener('DOMContentLoaded', function () {
+  redirectIfNotLoggedIn();
+  loadInsights();
+});

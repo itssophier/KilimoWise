@@ -2,152 +2,307 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="theme-color" content="#16a34a">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0e3a23" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0a0d0a" media="(prefers-color-scheme: dark)">
+  <meta name="description" content="Sign in to KiliMoWise">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title data-i18n="app.name">KiliMoWise</title>
+
+  <title data-i18n="auth.login">Login · KiliMoWise</title>
+
   <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
-  <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' fill='%2316a34a'/%3E%3Ctext x='96' y='140' font-size='120' text-anchor='middle' fill='white'%3E🌾%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap">
+
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/app.css">
+
+  <style>
+    body { min-height: 100vh; min-height: 100dvh; padding: 0; }
+    .auth-shell { display: grid; grid-template-columns: 1fr; min-height: 100vh; min-height: 100dvh; }
+    @media (min-width: 1024px) { .auth-shell { grid-template-columns: 1.05fr 1fr; } }
+    .auth-aside { display: none; }
+    @media (min-width: 1024px) { .auth-aside { display: flex; } }
+    .auth-aside {
+      position: relative;
+      background: var(--grad-hero);
+      color: #f3eedd;
+      padding: var(--s-8) var(--s-6);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow: hidden;
+      isolation: isolate;
+    }
+    .auth-aside::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at 20% 20%, rgba(192, 130, 31, 0.22) 0%, transparent 40%),
+        radial-gradient(circle at 80% 80%, rgba(75, 168, 114, 0.18) 0%, transparent 50%);
+      pointer-events: none;
+      z-index: -1;
+    }
+    .auth-aside::after {
+      content: '';
+      position: absolute;
+      width: 600px;
+      height: 600px;
+      bottom: -250px;
+      right: -200px;
+      background: radial-gradient(circle, rgba(75, 168, 114, 0.14) 0%, transparent 60%);
+      pointer-events: none;
+      z-index: -1;
+    }
+    .auth-aside-brand { display: flex; align-items: center; gap: var(--s-3); position: relative; z-index: 1; }
+    .auth-aside-brand .brand-mark { width: 48px; height: 48px; }
+    .auth-aside-brand-name { font-family: var(--font-display); font-size: var(--text-xl); font-weight: 500; letter-spacing: var(--tracking-tight); }
+    .auth-aside-quote { position: relative; z-index: 1; max-width: 460px; }
+    .auth-aside-quote .quote-text {
+      font-family: var(--font-display);
+      font-size: clamp(1.75rem, 3vw, 2.5rem);
+      font-weight: 400;
+      line-height: 1.2;
+      letter-spacing: var(--tracking-tight);
+      color: #f3eedd;
+    }
+    .auth-aside-quote .quote-text em { font-style: italic; color: var(--harvest-300); }
+    .auth-aside-quote .quote-by {
+      margin-top: var(--s-4);
+      color: rgba(243, 238, 221, 0.7);
+      font-size: var(--text-sm);
+    }
+    .auth-aside-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s-4); position: relative; z-index: 1; }
+    .auth-aside-stat { border-top: 1px solid rgba(243, 238, 221, 0.18); padding-top: var(--s-3); }
+    .auth-aside-stat .num { font-family: var(--font-display); font-size: var(--text-2xl); font-weight: 500; color: var(--harvest-300); }
+    .auth-aside-stat .lbl { font-size: var(--text-xs); color: rgba(243, 238, 221, 0.6); text-transform: uppercase; letter-spacing: var(--tracking-wider); margin-top: 2px; }
+
+    .auth-main {
+      display: flex;
+      flex-direction: column;
+      padding: var(--s-5) var(--s-5);
+      background: var(--bg);
+    }
+    @media (min-width: 768px) { .auth-main { padding: var(--s-8) var(--s-8); } }
+    .auth-main-inner { max-width: 420px; width: 100%; margin: 0 auto; padding: var(--s-8) 0; flex: 1; display: flex; flex-direction: column; justify-content: center; }
+    .auth-topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--s-8); }
+    .auth-mobile-brand { display: flex; align-items: center; gap: var(--s-2); }
+    .auth-mobile-brand svg { width: 32px; height: 32px; color: var(--forest-700); }
+    .auth-mobile-brand span { font-family: var(--font-display); font-size: var(--text-lg); font-weight: 500; }
+
+    .auth-title { font-family: var(--font-display); font-size: var(--text-3xl); font-weight: 500; letter-spacing: var(--tracking-tight); margin-bottom: var(--s-2); }
+    .auth-sub { color: var(--text-muted); font-size: var(--text-base); margin-bottom: var(--s-6); }
+    .auth-error {
+      display: flex; align-items: flex-start; gap: var(--s-2);
+      background: var(--danger-soft);
+      color: var(--danger);
+      padding: var(--s-3) var(--s-4);
+      border-radius: var(--r-md);
+      font-size: var(--text-sm);
+      font-weight: 500;
+      margin-bottom: var(--s-4);
+      border: 1px solid color-mix(in srgb, var(--danger) 22%, transparent);
+    }
+    .auth-error .err-icon { flex-shrink: 0; margin-top: 2px; }
+    .auth-toggle { text-align: center; margin-top: var(--s-5); font-size: var(--text-sm); color: var(--text-muted); }
+  </style>
+
   <script src="config.js"></script>
+  <script src="js/icons.js"></script>
   <script src="js/i18n.js"></script>
   <script src="js/utils.js"></script>
   <script src="js/api.js"></script>
   <script src="js/auth.js"></script>
+  <script src="js/ui.js"></script>
 </head>
-<body class="auth-page">
-  <div class="auth-container">
-    <div class="auth-header">
-      <div class="auth-logo">
-        <div class="logo-mark">🌾</div>
-        <h1 data-i18n="app.name">KiliMoWise</h1>
-        <p class="tagline" data-i18n="app.tagline">Smart AI Farm Assistant</p>
+<body data-auth>
+  <div class="auth-shell">
+    <aside class="auth-aside">
+      <div class="auth-aside-brand">
+        <span class="brand-mark" id="asideLogo"></span>
+        <span class="auth-aside-brand-name">KiliMoWise</span>
       </div>
-      <button class="lang-pill lang-toggle" onclick="toggleLanguage()" aria-label="Toggle language">
-        <span id="langLabel">EN / SW</span>
-      </button>
-    </div>
 
-    <div class="auth-card">
-      <h2 id="authHeading" data-i18n="auth.welcomeBack">Welcome back</h2>
+      <div class="auth-aside-quote">
+        <div class="quote-text">Farming is <em>knowledge</em> made richer when shared — ask, learn, and grow with the wisdom of the land.</div>
+        <div class="quote-by">— Karibu, your AI farming companion</div>
+      </div>
 
-      <div id="authError" class="auth-error hidden"></div>
+      <div class="auth-aside-stats">
+        <div class="auth-aside-stat">
+          <div class="num">24/7</div>
+          <div class="lbl">AI advisor</div>
+        </div>
+        <div class="auth-aside-stat">
+          <div class="num">EN/SW</div>
+          <div class="lbl">Languages</div>
+        </div>
+        <div class="auth-aside-stat">
+          <div class="num">+0</div>
+          <div class="lbl">Crops & livestock</div>
+        </div>
+      </div>
+    </aside>
 
-      <div id="registerFields" class="hidden">
-        <div class="form-group">
-          <label for="firstNameInput" data-i18n="auth.firstName">First Name</label>
-          <div class="input-icon-wrap">
-            <span class="input-icon">👤</span>
-            <input type="text" id="firstNameInput" class="input" data-i18n-placeholder="auth.firstName" placeholder="First Name" autocomplete="given-name">
+    <section class="auth-main">
+      <div class="auth-topbar">
+        <div class="auth-mobile-brand">
+          <span id="mobileLogo"></span>
+          <span>KiliMoWise</span>
+        </div>
+        <button class="pill-toggle" onclick="toggleLanguage()" aria-label="Toggle language">
+          <span class="dot"></span>
+          <span id="langLabel">EN / SW</span>
+        </button>
+      </div>
+
+      <div class="auth-main-inner">
+        <h1 class="auth-title" id="authHeading" data-i18n="auth.welcomeBack">Welcome back</h1>
+        <p class="auth-sub" id="authSub" data-i18n="auth.signInPrompt">Sign in to your KiliMoWise account</p>
+
+        <div id="authError" class="auth-error hidden">
+          <span class="err-icon" id="errIcon"></span>
+          <span id="authErrorMsg"></span>
+        </div>
+
+        <form id="registerFields" class="hidden" onsubmit="event.preventDefault(); handleAuth();">
+          <div class="field" style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-3);">
+            <div>
+              <label class="field-label" for="firstNameInput" data-i18n="auth.firstName">First name</label>
+              <input type="text" id="firstNameInput" class="input" data-i18n-placeholder="auth.firstName" placeholder="First name" autocomplete="given-name" required>
+            </div>
+            <div>
+              <label class="field-label" for="lastNameInput" data-i18n="auth.lastName">Last name</label>
+              <input type="text" id="lastNameInput" class="input" data-i18n-placeholder="auth.lastName" placeholder="Last name" autocomplete="family-name" required>
+            </div>
           </div>
-        </div>
-        <div class="form-group">
-          <label for="lastNameInput" data-i18n="auth.lastName">Last Name</label>
-          <div class="input-icon-wrap">
-            <span class="input-icon">👤</span>
-            <input type="text" id="lastNameInput" class="input" data-i18n-placeholder="auth.lastName" placeholder="Last Name" autocomplete="family-name">
+          <div class="field">
+            <label class="field-label" for="dobInput" data-i18n="auth.dob">Date of birth</label>
+            <input type="date" id="dobInput" class="input" required>
           </div>
-        </div>
-        <div class="form-group">
-          <label for="dobInput" data-i18n="auth.dob">Date of Birth</label>
-          <input type="date" id="dobInput" class="input">
-        </div>
-        <div class="form-group">
-          <label for="genderInput" data-i18n="auth.gender">Gender</label>
-          <select id="genderInput" class="select">
-            <option value="MALE" data-i18n="auth.male">Male</option>
-            <option value="FEMALE" data-i18n="auth.female">Female</option>
-            <option value="OTHER" data-i18n="auth.other">Other</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label for="locationInput" data-i18n="auth.location">Location</label>
-          <div class="input-icon-wrap">
-            <span class="input-icon">📍</span>
-            <input type="text" id="locationInput" class="input" data-i18n-placeholder="auth.location" placeholder="Location" autocomplete="country-name">
+          <div class="field">
+            <label class="field-label" for="genderInput" data-i18n="auth.gender">Gender</label>
+            <select id="genderInput" class="select">
+              <option value="MALE" data-i18n="auth.male">Male</option>
+              <option value="FEMALE" data-i18n="auth.female">Female</option>
+              <option value="OTHER" data-i18n="auth.other">Other</option>
+            </select>
           </div>
-        </div>
+          <div class="field">
+            <label class="field-label" for="locationInput" data-i18n="auth.location">Location</label>
+            <input type="text" id="locationInput" class="input" data-i18n-placeholder="auth.location" placeholder="e.g. Nakuru, Kenya" autocomplete="country-name" required>
+          </div>
+        </form>
+
+        <form onsubmit="event.preventDefault(); handleAuth();">
+          <div class="field">
+            <label class="field-label" for="phoneInput" data-i18n="auth.phone">Phone number</label>
+            <div class="input-icon-wrap">
+              <span class="input-icon" id="phoneIcon"></span>
+              <input type="tel" id="phoneInput" class="input" data-i18n-placeholder="auth.phone" placeholder="07XX XXX XXX" autocomplete="tel" inputmode="tel" required>
+            </div>
+          </div>
+          <div class="field">
+            <label class="field-label" for="passwordInput" data-i18n="auth.password">Password</label>
+            <div class="input-icon-wrap">
+              <span class="input-icon" id="lockIcon"></span>
+              <input type="password" id="passwordInput" class="input" data-i18n-placeholder="auth.password" placeholder="Your password" autocomplete="current-password" minlength="4" required>
+            </div>
+          </div>
+          <button type="submit" id="authBtn" class="btn btn-primary btn-block btn-lg">
+            <span data-i18n="auth.loginbtn">Sign in</span>
+            <span id="authBtnArrow"></span>
+          </button>
+        </form>
+
+        <p class="auth-toggle">
+          <span id="authToggleText" data-i18n="auth.noaccount">Don't have an account?</span>
+          <button type="button" class="btn-link" onclick="toggleAuthMode()" id="authToggleLink" data-i18n="auth.register">Create account</button>
+        </p>
       </div>
-
-      <div class="form-group">
-        <label for="phoneInput" data-i18n="auth.phone">Phone Number</label>
-        <div class="input-icon-wrap">
-          <span class="input-icon">📱</span>
-          <input type="tel" id="phoneInput" class="input" data-i18n-placeholder="auth.phone" placeholder="Phone Number" autocomplete="tel" inputmode="tel">
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label for="passwordInput" data-i18n="auth.password">Password</label>
-        <div class="input-icon-wrap">
-          <span class="input-icon">🔒</span>
-          <input type="password" id="passwordInput" class="input" data-i18n-placeholder="auth.password" placeholder="Password" autocomplete="current-password">
-        </div>
-      </div>
-
-      <button id="authBtn" class="btn btn-primary btn-block" onclick="handleAuth()" data-i18n="auth.loginbtn">Login</button>
-
-      <p class="auth-toggle">
-        <span id="authToggleText" data-i18n="auth.noaccount">Don't have an account?</span>
-        <button class="btn-link" onclick="toggleAuthMode()" id="authToggleLink" data-i18n="auth.register">Create Account</button>
-      </p>
-    </div>
+    </section>
   </div>
 
   <script>
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('service-worker.js');
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('service-worker.js').catch(function () {});
+      });
     }
 
     var isRegisterMode = false;
 
-    function updateHeading() {
+    function updateAuthUi() {
       var h = document.getElementById('authHeading');
-      h.textContent = isRegisterMode ? __('auth.createAccount') : __('auth.welcomeBack');
+      var s = document.getElementById('authSub');
+      var form = document.getElementById('registerFields');
+      var btn = document.getElementById('authBtn');
+      var txt = document.getElementById('authToggleText');
+      var lnk = document.getElementById('authToggleLink');
+
+      if (isRegisterMode) {
+        h.setAttribute('data-i18n', 'auth.createAccount');
+        s.setAttribute('data-i18n', 'auth.signInPrompt');
+        form.classList.remove('hidden');
+        btn.firstElementChild.setAttribute('data-i18n', 'auth.registerbtn');
+        txt.setAttribute('data-i18n', 'auth.hasaccount');
+        lnk.setAttribute('data-i18n', 'auth.login');
+      } else {
+        h.setAttribute('data-i18n', 'auth.welcomeBack');
+        s.setAttribute('data-i18n', 'auth.signInPrompt');
+        form.classList.add('hidden');
+        btn.firstElementChild.setAttribute('data-i18n', 'auth.loginbtn');
+        txt.setAttribute('data-i18n', 'auth.noaccount');
+        lnk.setAttribute('data-i18n', 'auth.register');
+      }
+      applyTranslations();
     }
 
     function toggleAuthMode() {
       isRegisterMode = !isRegisterMode;
-      document.getElementById('registerFields').classList.toggle('hidden', !isRegisterMode);
-      document.getElementById('authToggleText').textContent = isRegisterMode ? __('auth.hasaccount') : __('auth.noaccount');
-      document.getElementById('authToggleLink').textContent = isRegisterMode ? __('auth.login') : __('auth.register');
-      document.getElementById('authBtn').textContent = isRegisterMode ? __('auth.registerbtn') : __('auth.loginbtn');
-      updateHeading();
+      updateAuthUi();
+    }
+
+    function showAuthError(msg) {
+      var el = document.getElementById('authError');
+      el.querySelector('#authErrorMsg').textContent = msg;
+      el.classList.remove('hidden');
+    }
+
+    function clearAuthError() {
+      document.getElementById('authError').classList.add('hidden');
     }
 
     function handleAuth() {
+      clearAuthError();
       var phone = document.getElementById('phoneInput').value.trim();
       var password = document.getElementById('passwordInput').value;
-      var errorEl = document.getElementById('authError');
-      errorEl.classList.add('hidden');
-      errorEl.textContent = '';
 
       if (!phone || !password) {
-        errorEl.textContent = __('auth.phone') + ' / ' + __('auth.password') + ' ' + __('common.error').toLowerCase();
-        errorEl.classList.remove('hidden');
+        showAuthError(__('auth.phone') + ' ' + __('common.required'));
         return;
       }
 
       if (isRegisterMode) {
-        var firstName = document.getElementById('firstNameInput').value.trim();
-        var lastName = document.getElementById('lastNameInput').value.trim();
+        var fn = document.getElementById('firstNameInput').value.trim();
+        var ln = document.getElementById('lastNameInput').value.trim();
         var dob = document.getElementById('dobInput').value;
-        var location = document.getElementById('locationInput').value.trim();
-
-        if (!firstName || !lastName || !dob || !location) {
-          errorEl.textContent = __('common.error') + ': ' + __('auth.firstName') + ', ' + __('auth.lastName') + ', ' + __('auth.dob') + ', ' + __('auth.location') + ' ' + __('common.required');
-          errorEl.classList.remove('hidden');
+        var loc = document.getElementById('locationInput').value.trim();
+        if (!fn || !ln || !dob || !loc) {
+          showAuthError(__('auth.firstName') + ', ' + __('auth.lastName') + ', ' + __('auth.dob') + ', ' + __('auth.location') + ' ' + __('common.required'));
           return;
         }
       }
 
       var btn = document.getElementById('authBtn');
       btn.disabled = true;
-      btn.innerHTML = '<span class="spinner"></span> ' + __('common.loading');
+      btn.innerHTML = '<span class="spinner sm"></span> ' + __('common.loading');
 
       var promise = isRegisterMode
         ? registerUser(
@@ -165,25 +320,23 @@
         window.location.href = 'index.html';
       }).catch(function (err) {
         var msg = err && err.message === 'unauthorized' ? __('auth.invalidCredentials') : (err && err.message ? err.message : __('auth.genericError'));
-        errorEl.textContent = msg;
-        errorEl.classList.remove('hidden');
+        showAuthError(msg);
         btn.disabled = false;
-        btn.textContent = isRegisterMode ? __('auth.registerbtn') : __('auth.loginbtn');
+        btn.innerHTML = '<span data-i18n="' + (isRegisterMode ? 'auth.registerbtn' : 'auth.loginbtn') + '">' + (isRegisterMode ? __('auth.registerbtn') : __('auth.loginbtn')) + '</span><span id="authBtnArrow"></span>';
+        var ar = document.getElementById('authBtnArrow');
+        if (ar) ar.appendChild(window.svg('arrow-right', 18));
       });
     }
 
     document.addEventListener('DOMContentLoaded', function () {
-      if (isLoggedIn()) {
-        window.location.href = 'index.html';
-      }
-      updateHeading();
-    });
-
-    ['passwordInput', 'phoneInput', 'dobInput', 'firstNameInput', 'lastNameInput', 'locationInput'].forEach(function (id) {
-      var el = document.getElementById(id);
-      if (el) el.addEventListener('keydown', function (e) {
-        if (e.key === 'Enter') handleAuth();
-      });
+      if (isLoggedIn()) { window.location.href = 'index.html'; return; }
+      document.getElementById('asideLogo').appendChild(window.svg('logo-mark', 48));
+      document.getElementById('mobileLogo').appendChild(window.svg('logo-mark-light', 32));
+      document.getElementById('phoneIcon').appendChild(window.svg('phone', 18));
+      document.getElementById('lockIcon').appendChild(window.svg('lock', 18));
+      document.getElementById('errIcon').appendChild(window.svg('warning', 18));
+      var arrow = document.getElementById('authBtnArrow');
+      if (arrow) arrow.appendChild(window.svg('arrow-right', 18));
     });
   </script>
 </body>

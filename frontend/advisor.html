@@ -2,91 +2,131 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="theme-color" content="#16a34a">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0e3a23" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0a0d0a" media="(prefers-color-scheme: dark)">
+  <meta name="description" content="Ask KiliMoWise AI advisor about crop and animal issues">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
   <title data-i18n="advisor.title">AI Advisor · KiliMoWise</title>
+
   <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
-  <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' fill='%2316a34a'/%3E%3Ctext x='96' y='140' font-size='120' text-anchor='middle' fill='white'%3E🌾%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap">
+
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/app.css">
+
   <script src="config.js"></script>
+  <script src="js/icons.js"></script>
   <script src="js/i18n.js"></script>
   <script src="js/utils.js"></script>
   <script src="js/api.js"></script>
   <script src="js/auth.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/shell.js"></script>
   <script src="js/advisor.js"></script>
+
   <script>
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('service-worker.js');
+      window.addEventListener('load', function () { navigator.serviceWorker.register('service-worker.js').catch(function () {}); });
     }
   </script>
 </head>
 <body>
-  <header class="app-header">
-    <button class="back-btn" onclick="window.location.href='index.html'" aria-label="Back">←</button>
-    <h1 data-i18n="advisor.title">AI Advisor</h1>
-    <button class="lang-pill" onclick="toggleLanguage()">EN / SW</button>
-  </header>
+  <div data-topbar></div>
 
-  <main class="container">
-    <div class="card fade-up">
-      <div class="form-group">
-        <label for="problemInput" data-i18n="advisor.describe">Describe your crop or animal issue</label>
-        <textarea id="problemInput" class="input" rows="3" data-i18n-placeholder="advisor.describe" placeholder="e.g. My maize leaves are turning yellow..."></textarea>
+  <main class="page">
+    <header class="page-header">
+      <div>
+        <small data-i18n="dashboard.heroEyebrow">Today on the farm</small>
+        <h1 class="page-title" data-i18n="advisor.title">AI Advisor</h1>
+        <p class="text-secondary mt-2" style="max-width: 56ch;" data-i18n="advisor.subtitle">Diagnose crop and animal issues with photos and context</p>
+      </div>
+    </header>
+
+    <form class="card card-elevated stagger" onsubmit="event.preventDefault(); handleAnalyze();">
+      <div class="field">
+        <label class="field-label" for="problemInput" data-i18n="advisor.describe">Describe your crop or animal issue</label>
+        <textarea id="problemInput" class="input" rows="4" data-i18n-placeholder="advisor.describePlaceholder" placeholder="e.g. My maize leaves are turning yellow with brown spots…" maxlength="4000" required></textarea>
+        <div class="field-hint"><span id="charCount">0</span> / 4000 <span data-i18n="advisor.charLimit">characters</span></div>
       </div>
 
-      <div class="form-group">
-        <label for="typeSelect" data-i18n="advisor.type">Issue Type</label>
-        <select id="typeSelect" class="select">
-          <option value="CROP" data-i18n="advisor.crop">🌱 Crop</option>
-          <option value="ANIMAL" data-i18n="advisor.animal">🐄 Animal</option>
-        </select>
+      <div class="field">
+        <label class="field-label" data-i18n="advisor.type">Issue type</label>
+        <div class="segment" id="typeSegment" role="tablist">
+          <button type="button" class="segment-item active" data-value="CROP" role="tab">
+            <span class="icon-wrap" id="segCropIcon" style="display:inline-flex;vertical-align:-3px;margin-right:6px;"></span>
+            <span data-i18n="advisor.crop">Crop</span>
+          </button>
+          <button type="button" class="segment-item" data-value="ANIMAL" role="tab">
+            <span class="icon-wrap" id="segAnimalIcon" style="display:inline-flex;vertical-align:-3px;margin-right:6px;"></span>
+            <span data-i18n="advisor.animal">Animal</span>
+          </button>
+        </div>
+        <input type="hidden" id="typeSelect" value="CROP">
       </div>
 
-      <div class="form-group">
-        <label data-i18n="advisor.photo">Photo (optional)</label>
+      <div class="field">
+        <label class="field-label" data-i18n="advisor.photo">Photo (optional)</label>
         <label class="upload-zone" id="uploadZone">
-          <div class="upload-icon">📷</div>
+          <div class="upload-icon" id="uploadIcon"></div>
           <div class="upload-text">
-            <div data-i18n="advisor.upload">Tap to add a photo</div>
-            <div class="upload-hint" data-i18n="advisor.uploadHint">Helps the AI identify the issue</div>
+            <div class="upload-title" id="uploadTitle" data-i18n="advisor.upload">Add a photo</div>
+            <div class="upload-hint" data-i18n="advisor.uploadHint">Helps the AI see the issue clearly</div>
           </div>
           <input type="file" id="imageInput" accept="image/*" capture="environment">
         </label>
         <div id="imagePreview" class="upload-preview hidden">
           <img id="previewImg" alt="preview">
-          <button type="button" class="upload-remove" id="removeImageBtn" aria-label="Remove">✕</button>
+          <button type="button" class="upload-remove" id="removeImageBtn" aria-label="Remove photo"></button>
         </div>
       </div>
 
-      <button id="askBtn" class="btn btn-primary btn-block" onclick="handleAnalyze()" data-i18n="advisor.ask">Ask KiliMoWise</button>
-    </div>
+      <button type="submit" id="askBtn" class="btn btn-primary btn-block btn-lg">
+        <span id="askIcon"></span>
+        <span data-i18n="advisor.ask">Ask KiliMoWise</span>
+      </button>
+    </form>
 
     <div id="loadingState" class="loading-state hidden">
       <div class="spinner lg"></div>
-      <p data-i18n="advisor.thinking">KiliMoWise is analyzing your issue...</p>
+      <p data-i18n="advisor.thinking">Analyzing your issue…</p>
     </div>
 
-    <div id="error" class="card hidden" style="border-left:4px solid var(--danger);"></div>
+    <div id="error" class="card hidden" style="border-color: var(--danger);">
+      <div class="flex items-center gap-3">
+        <span class="stat-icon" style="background: var(--danger-soft); color: var(--danger);" id="errIcon"></span>
+        <div id="errorMsg" class="text-secondary" style="font-size: var(--text-sm);"></div>
+      </div>
+    </div>
 
     <div id="emptyState" class="empty-state">
-      <span class="empty-icon">🌾</span>
-      <p data-i18n="advisor.empty">Describe your issue above to get started</p>
+      <div class="empty-art" id="emptyArt"></div>
+      <h3 data-i18n="advisor.emptyTitle">No question yet</h3>
+      <p data-i18n="advisor.emptyHint">Tell us what your crop or animal looks like, and the AI will help diagnose.</p>
     </div>
 
-    <div id="results" class="result-section hidden">
-      <div class="result-card diagnosis fade-up">
-        <h3><span class="ic">🩺</span> <span data-i18n="advisor.diagnosis">Diagnosis</span></h3>
-        <p id="diagnosisContent"></p>
+    <section id="results" class="hidden mt-5" style="display: flex; flex-direction: column; gap: var(--s-4);">
+      <div class="result-card fade-up">
+        <div class="result-title">
+          <span id="diagnosisIcon"></span>
+          <span data-i18n="advisor.diagnosis">Diagnosis</span>
+        </div>
+        <div class="result-body" id="diagnosisContent">—</div>
       </div>
 
-      <div class="result-card solution fade-up">
-        <h3><span class="ic">💡</span> <span data-i18n="advisor.solution">Recommended Solution</span></h3>
-        <p id="solutionContent"></p>
+      <div class="result-card alt fade-up">
+        <div class="result-title">
+          <span id="solutionIcon"></span>
+          <span data-i18n="advisor.solution">Recommended solution</span>
+        </div>
+        <div class="result-body" id="solutionContent">—</div>
       </div>
 
       <div class="card fade-up">
@@ -99,15 +139,18 @@
         </div>
       </div>
 
-      <div id="remediesSection" class="result-card remedies hidden fade-up">
-        <h3><span class="ic">🛒</span> <span data-i18n="advisor.remedies">Remedies & Where to Buy</span></h3>
-        <div class="table-wrapper">
+      <div id="remediesSection" class="result-card info hidden fade-up">
+        <div class="result-title">
+          <span id="remediesIcon"></span>
+          <span data-i18n="advisor.remedies">Remedies & where to buy</span>
+        </div>
+        <div class="table-wrap">
           <table>
             <thead>
               <tr>
                 <th data-i18n="advisor.name">Name</th>
-                <th data-i18n="advisor.price">Est. Price</th>
-                <th data-i18n="advisor.amount">Amount Needed</th>
+                <th data-i18n="advisor.price">Est. price</th>
+                <th data-i18n="advisor.amount">Amount</th>
                 <th data-i18n="advisor.location">Location</th>
               </tr>
             </thead>
@@ -115,21 +158,50 @@
           </table>
         </div>
       </div>
-    </div>
+    </section>
 
-    <div id="historySection" class="hidden">
-      <h3 class="section-title">
-        <span data-i18n="advisor.history">Recent Diagnoses</span>
-      </h3>
-      <div id="historyList"></div>
-    </div>
+    <section id="historySection" class="hidden mt-6">
+      <h3 class="eyebrow mb-3" data-i18n="advisor.history">Recent diagnoses</h3>
+      <div id="historyList" class="stagger" style="display: flex; flex-direction: column; gap: var(--s-3);"></div>
+    </section>
   </main>
 
-  <nav class="bottom-nav">
-    <a href="index.html" class="nav-item"><span class="nav-icon">🏠</span><span data-i18n="nav.home">Home</span></a>
-    <a href="advisor.html" class="nav-item active"><span class="nav-icon">🤖</span><span data-i18n="nav.advisor">Advisor</span></a>
-    <a href="budget.html" class="nav-item"><span class="nav-icon">💰</span><span data-i18n="nav.budget">Budget</span></a>
-    <a href="insights.html" class="nav-item"><span class="nav-icon">📊</span><span data-i18n="nav.insights">Insights</span></a>
-  </nav>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      var placeIcon = function (el, name, size) { if (el) el.appendChild(window.svg(name, size || 20)); };
+      placeIcon(document.getElementById('segCropIcon'), 'sprout', 16);
+      placeIcon(document.getElementById('segAnimalIcon'), 'tractor', 16);
+      placeIcon(document.getElementById('uploadIcon'), 'camera', 22);
+      placeIcon(document.getElementById('askIcon'), 'sparkles', 18);
+      placeIcon(document.getElementById('errIcon'), 'warning', 20);
+      placeIcon(document.getElementById('diagnosisIcon'), 'leaf', 14);
+      placeIcon(document.getElementById('solutionIcon'), 'flask', 14);
+      placeIcon(document.getElementById('remediesIcon'), 'shopping', 14);
+      placeIcon(document.getElementById('removeImageBtn'), 'close', 14);
+      placeIcon(document.getElementById('emptyArt'), 'leaf', 80);
+
+      // Segmented control wiring
+      var segment = document.getElementById('typeSegment');
+      var hidden = document.getElementById('typeSelect');
+      segment.addEventListener('click', function (e) {
+        var btn = e.target.closest('.segment-item');
+        if (!btn) return;
+        segment.querySelectorAll('.segment-item').forEach(function (b) { b.classList.remove('active'); });
+        btn.classList.add('active');
+        hidden.value = btn.getAttribute('data-value');
+      });
+
+      // Char counter
+      var problemInput = document.getElementById('problemInput');
+      var charCount = document.getElementById('charCount');
+      problemInput.addEventListener('input', function () { charCount.textContent = problemInput.value.length; });
+
+      // Save location to localStorage on profile for sidebar display
+      try {
+        var farmer = JSON.parse(localStorage.getItem('kilimowise_profile'));
+        // No-op: data fetched elsewhere
+      } catch (e) { /* ignore */ }
+    });
+  </script>
 </body>
 </html>

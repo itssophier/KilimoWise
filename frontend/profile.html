@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0e3a23" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0a0d0a" media="(prefers-color-scheme: dark)">
+  <meta name="description" content="Your KiliMoWise profile and preferences">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+  <title data-i18n="profile.title">Profile · KiliMoWise</title>
+
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap">
+
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/app.css">
+
+  <script src="config.js"></script>
+  <script src="js/icons.js"></script>
+  <script src="js/i18n.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/shell.js"></script>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () { navigator.serviceWorker.register('service-worker.js').catch(function () {}); });
+    }
+  </script>
+</head>
+<body>
+  <div data-topbar></div>
+
+  <main class="page">
+    <header class="page-header">
+      <div>
+        <small data-i18n="dashboard.heroEyebrow">Today on the farm</small>
+        <h1 class="page-title" data-i18n="profile.title">Your profile</h1>
+        <p class="text-secondary mt-2" style="max-width: 56ch;" data-i18n="profile.subtitle">Account details and farm snapshot</p>
+      </div>
+    </header>
+
+    <section class="profile-hero fade-up">
+      <span class="avatar" id="profileAvatar">—</span>
+      <div style="flex: 1; min-width: 0;">
+        <div class="profile-name" id="profileName">—</div>
+        <div class="profile-meta" id="profileMeta" data-i18n="profile.signedInAs">Signed in as</div>
+        <div class="profile-badges">
+          <span class="badge"><span class="badge-dot"></span> <span data-i18n="common.online">Online</span></span>
+          <span class="badge"><span id="versionBadge">v1.0.0</span></span>
+        </div>
+      </div>
+    </section>
+
+    <div class="stat-grid stagger mb-5">
+      <div class="stat-tile">
+        <div class="stat-icon" id="iconExp"></div>
+        <div class="stat-label" data-i18n="dashboard.totalExpenses">Total expenses</div>
+        <div class="stat-value num" id="statTotal">KES 0</div>
+      </div>
+      <div class="stat-tile alt">
+        <div class="stat-icon" id="iconDiag"></div>
+        <div class="stat-label" data-i18n="dashboard.recentDiagnosis">Recent diagnosis</div>
+        <div class="stat-value stat-value-sm" id="statDiag">—</div>
+      </div>
+    </div>
+
+    <section class="card fade-up">
+      <div class="card-header">
+        <div>
+          <div class="eyebrow" data-i18n="profile.account">Account details</div>
+          <div class="card-subtitle" data-i18n="profile.signedInAs">Signed in as</div>
+        </div>
+        <span class="badge primary" data-i18n="common.save">Saved</span>
+      </div>
+      <div class="kv-list">
+        <div class="kv"><span class="kv-key" data-i18n="profile.phone">Phone</span><span class="kv-val" id="kvPhone">—</span></div>
+        <div class="kv"><span class="kv-key" data-i18n="auth.firstName">First name</span><span class="kv-val" id="kvFirst">—</span></div>
+        <div class="kv"><span class="kv-key" data-i18n="auth.lastName">Last name</span><span class="kv-val" id="kvLast">—</span></div>
+        <div class="kv"><span class="kv-key" data-i18n="profile.dob">Date of birth</span><span class="kv-val" id="kvDob">—</span></div>
+        <div class="kv"><span class="kv-key" data-i18n="profile.gender">Gender</span><span class="kv-val" id="kvGender">—</span></div>
+        <div class="kv"><span class="kv-key" data-i18n="profile.location">Location</span><span class="kv-val" id="kvLocation">—</span></div>
+        <div class="kv"><span class="kv-key" data-i18n="profile.memberSince">Member since</span><span class="kv-val" id="kvSince">—</span></div>
+      </div>
+    </section>
+
+    <section class="card fade-up mt-5">
+      <div class="card-header">
+        <div>
+          <div class="eyebrow" data-i18n="profile.preferences">Preferences</div>
+          <div class="card-subtitle" data-i18n="profile.theme">Theme & language</div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="field-label" data-i18n="profile.theme">Theme</label>
+        <div class="segment" id="themeSegment" role="tablist">
+          <button type="button" class="segment-item" data-value="light" role="tab">
+            <span id="themeLightIcon" style="display:inline-flex;vertical-align:-3px;margin-right:6px;"></span>
+            <span data-i18n="profile.themeLight">Light</span>
+          </button>
+          <button type="button" class="segment-item" data-value="dark" role="tab">
+            <span id="themeDarkIcon" style="display:inline-flex;vertical-align:-3px;margin-right:6px;"></span>
+            <span data-i18n="profile.themeDark">Dark</span>
+          </button>
+          <button type="button" class="segment-item" data-value="system" role="tab">
+            <span id="themeSystemIcon" style="display:inline-flex;vertical-align:-3px;margin-right:6px;"></span>
+            <span data-i18n="profile.themeSystem">System</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="field-label" data-i18n="profile.language">Language</label>
+        <div class="segment" id="langSegment" role="tablist">
+          <button type="button" class="segment-item" data-value="en" role="tab">English</button>
+          <button type="button" class="segment-item" data-value="sw" role="tab">Kiswahili</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="card fade-up mt-5">
+      <div class="card-header">
+        <div>
+          <div class="eyebrow" data-i18n="profile.about">About</div>
+          <div class="card-subtitle" data-i18n="app.tagline">Smart AI Farm Assistant</div>
+        </div>
+      </div>
+      <div class="kv-list">
+        <div class="kv"><span class="kv-key" data-i18n="profile.version">Version</span><span class="kv-val" id="kvVersion">1.0.0</span></div>
+        <div class="kv"><span class="kv-key" data-i18n="app.name">KiliMoWise</span><span class="kv-val">PWA · v1</span></div>
+      </div>
+      <button class="btn btn-outline btn-block mt-5" onclick="if (confirm(__('auth.logout') + '?')) logout()">
+        <span id="logoutIcon"></span>
+        <span data-i18n="profile.signOut">Sign out</span>
+      </button>
+    </section>
+  </main>
+
+  <script>
+    function getInitials() {
+      var n = (localStorage.getItem('kilimowise_name') || '').trim();
+      var parts = n.split(/\s+/).filter(Boolean);
+      if (parts.length === 0) return '—';
+      if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
+      return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+    }
+
+    function getStoredThemePref() {
+      try { return localStorage.getItem('kilimowise_theme') || 'system'; } catch (e) { return 'system'; }
+    }
+
+    function setStoredThemePref(v) {
+      try { localStorage.setItem('kilimowise_theme', v); } catch (e) { /* ignore */ }
+      var t = v === 'system'
+        ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+        : v;
+      window.setTheme(t);
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+      var placeIcon = function (el, name, size) { if (el) el.appendChild(window.svg(name, size || 18)); };
+      placeIcon(document.getElementById('iconExp'), 'wallet', 18);
+      placeIcon(document.getElementById('iconDiag'), 'leaf', 18);
+      placeIcon(document.getElementById('themeLightIcon'), 'sun', 16);
+      placeIcon(document.getElementById('themeDarkIcon'), 'moon', 16);
+      placeIcon(document.getElementById('themeSystemIcon'), 'globe', 16);
+      placeIcon(document.getElementById('logoutIcon'), 'log-out', 18);
+
+      // Profile
+      var name = localStorage.getItem('kilimowise_name') || '—';
+      var phone = localStorage.getItem('kilimowise_phone') || '—';
+      var parts = name.split(/\s+/);
+      var first = parts[0] || '—';
+      var last = parts.length > 1 ? parts.slice(1).join(' ') : '—';
+      document.getElementById('profileName').textContent = name;
+      document.getElementById('profileMeta').textContent = __('profile.signedInAs') + ' ' + name;
+      document.getElementById('profileAvatar').textContent = getInitials();
+      document.getElementById('kvPhone').textContent = phone;
+      document.getElementById('kvFirst').textContent = first;
+      document.getElementById('kvLast').textContent = last;
+      document.getElementById('kvDob').textContent = localStorage.getItem('kilimowise_dob') || '—';
+      document.getElementById('kvGender').textContent = localStorage.getItem('kilimowise_gender') || '—';
+      document.getElementById('kvLocation').textContent = localStorage.getItem('kilimowise_location') || '—';
+
+      // Member since — use token issuance? We don't have it, show '—' for now
+      var since = localStorage.getItem('kilimowise_memberSince');
+      if (!since) {
+        var d = new Date();
+        since = d.toLocaleDateString('en-GB', { year: 'numeric', month: 'short' });
+        try { localStorage.setItem('kilimowise_memberSince', since); } catch (e) { /* ignore */ }
+      }
+      document.getElementById('kvSince').textContent = since;
+
+      // Stats
+      var fid = getFarmerId();
+      if (fid) {
+        getExpenses(fid).then(function (exps) {
+          var total = (exps || []).reduce(function (s, e) { return s + (parseFloat(e.amount) || 0); }, 0);
+          document.getElementById('statTotal').textContent = formatCurrency(total);
+        }).catch(function () {});
+      }
+      var hist = JSON.parse(localStorage.getItem('kilimowise_advice_history') || '[]');
+      if (hist.length > 0) {
+        document.getElementById('statDiag').textContent = hist[0].diagnosis || '—';
+      }
+
+      // Theme segment
+      var currentPref = getStoredThemePref();
+      var tSeg = document.getElementById('themeSegment');
+      tSeg.querySelectorAll('.segment-item').forEach(function (b) {
+        b.classList.toggle('active', b.getAttribute('data-value') === currentPref);
+        b.addEventListener('click', function () {
+          tSeg.querySelectorAll('.segment-item').forEach(function (x) { x.classList.remove('active'); });
+          b.classList.add('active');
+          setStoredThemePref(b.getAttribute('data-value'));
+        });
+      });
+
+      // Lang segment
+      var lSeg = document.getElementById('langSegment');
+      lSeg.querySelectorAll('.segment-item').forEach(function (b) {
+        b.classList.toggle('active', b.getAttribute('data-value') === currentLang);
+        b.addEventListener('click', function () {
+          lSeg.querySelectorAll('.segment-item').forEach(function (x) { x.classList.remove('active'); });
+          b.classList.add('active');
+          setLanguage(b.getAttribute('data-value'));
+        });
+      });
+    });
+  </script>
+</body>
+</html>
