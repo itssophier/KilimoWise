@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: kilimowise-backend
+    runtime: java
+    plan: free
+    buildCommand: ./mvnw clean package -DskipTests
+    startCommand: java -jar target/*.jar
+    envVars:
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: SPRING_DATASOURCE_URL
+        sync: false
+      - key: SPRING_DATASOURCE_USERNAME
+        sync: false
+      - key: SPRING_DATASOURCE_PASSWORD
+        sync: false
+
+  - type: static
+    name: kilimowise-frontend
+    rootDir: frontend
+    buildCommand: ""
+    publishPath: .
