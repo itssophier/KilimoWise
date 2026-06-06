@@ -9,6 +9,7 @@ document.addEventListener('DOMContentLoaded', function () {
 function handleAnalyze() {
   var input = document.getElementById('problemInput').value.trim();
   var type = document.getElementById('typeSelect').value;
+  var farmerId = getFarmerId();
   var resultsEl = document.getElementById('results');
   var errorEl = document.getElementById('error');
   var btn = document.getElementById('askBtn');
@@ -25,11 +26,17 @@ function handleAnalyze() {
     return;
   }
 
+  if (!farmerId) {
+    errorEl.textContent = __('advisor.error');
+    errorEl.classList.remove('hidden');
+    return;
+  }
+
   loadingEl.classList.remove('hidden');
   btn.disabled = true;
   btn.textContent = __('common.loading');
 
-  analyzeProblem(input, type).then(function (result) {
+  analyzeProblem(farmerId, type, input).then(function (result) {
     loadingEl.classList.add('hidden');
     btn.disabled = false;
     btn.textContent = __('advisor.ask');

@@ -7,27 +7,23 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 function loadFarmerName() {
-  var farmer = getFarmer();
+  var name = getFarmerName();
   var el = document.getElementById('welcomeName');
-  if (farmer && farmer.name) {
-    el.textContent = farmer.name;
-  } else {
-    el.textContent = __('auth.welcome');
-  }
+  el.textContent = name || __('auth.welcome');
 }
 
 function loadExpensesSummary() {
-  var farmer = getFarmer();
+  var farmerId = getFarmerId();
   var el = document.getElementById('expenseSummary');
   var skeleton = document.getElementById('expenseSkeleton');
 
-  if (!farmer || !farmer.id) {
+  if (!farmerId) {
     skeleton.classList.add('hidden');
     el.textContent = '—';
     return;
   }
 
-  getExpenses(farmer.id).then(function (expenses) {
+  getExpenses(farmerId).then(function (expenses) {
     skeleton.classList.add('hidden');
     if (!expenses || expenses.length === 0) {
       el.textContent = 'KES 0.00';
@@ -45,17 +41,15 @@ function loadLatestTip() {
   var el = document.getElementById('tipContent');
   var skeleton = document.getElementById('tipSkeleton');
 
-  getInsights().then(function (data) {
+  var cached = (function () { try { return JSON.parse(localStorage.getItem('kilimowise_insights_cache')); } catch (e) { return null; } })();
+  if (cached && cached.tips && cached.tips.length > 0) {
     skeleton.classList.add('hidden');
-    if (data.tips && data.tips.length > 0) {
-      el.textContent = data.tips[0].content;
-    } else {
-      el.textContent = __('insights.empty');
-    }
-  }).catch(function () {
-    skeleton.classList.add('hidden');
-    el.textContent = __('insights.empty');
-  });
+    el.textContent = cached.tips[0].content;
+    return;
+  }
+
+  skeleton.classList.add('hidden');
+  el.textContent = 'Rotate crops every season to maintain soil fertility.';
 }
 
 function loadLatestDiagnosis() {

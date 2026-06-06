@@ -23,7 +23,7 @@ npx serve .
 php -S localhost:3000
 ```
 
-2. **Update API URL** (if backend isn't on localhost:8080):
+2. **Update API URL** (if backend isn't on localhost:9090):
 
 Edit `config.js`:
 ```js

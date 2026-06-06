@@ -12,6 +12,7 @@
   <link rel="stylesheet" href="css/style.css">
   <script src="config.js"></script>
   <script src="js/i18n.js"></script>
+  <script src="js/utils.js"></script>
   <script src="js/api.js"></script>
   <script src="js/auth.js"></script>
 </head>
@@ -33,14 +34,34 @@
 
       <div id="registerFields" class="hidden">
         <div class="form-group">
-          <label for="nameInput" data-i18n="auth.name">Full Name</label>
-          <input type="text" id="nameInput" class="input" data-i18n-placeholder="auth.name" placeholder="Full Name" autocomplete="name">
+          <label for="firstNameInput" data-i18n="auth.firstName">First Name</label>
+          <input type="text" id="firstNameInput" class="input" data-i18n-placeholder="auth.firstName" placeholder="First Name" autocomplete="given-name">
+        </div>
+        <div class="form-group">
+          <label for="lastNameInput" data-i18n="auth.lastName">Last Name</label>
+          <input type="text" id="lastNameInput" class="input" data-i18n-placeholder="auth.lastName" placeholder="Last Name" autocomplete="family-name">
+        </div>
+        <div class="form-group">
+          <label for="dobInput" data-i18n="auth.dob">Date of Birth</label>
+          <input type="date" id="dobInput" class="input">
+        </div>
+        <div class="form-group">
+          <label for="genderInput" data-i18n="auth.gender">Gender</label>
+          <select id="genderInput" class="select">
+            <option value="MALE" data-i18n="auth.male">Male</option>
+            <option value="FEMALE" data-i18n="auth.female">Female</option>
+            <option value="OTHER" data-i18n="auth.other">Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="locationInput" data-i18n="auth.location">Location</label>
+          <input type="text" id="locationInput" class="input" data-i18n-placeholder="auth.location" placeholder="Location" autocomplete="country-name">
         </div>
       </div>
 
       <div class="form-group">
-        <label for="emailInput" data-i18n="auth.email">Email</label>
-        <input type="email" id="emailInput" class="input" data-i18n-placeholder="auth.email" placeholder="Email" autocomplete="email">
+        <label for="phoneInput" data-i18n="auth.phone">Phone Number</label>
+        <input type="tel" id="phoneInput" class="input" data-i18n-placeholder="auth.phone" placeholder="Phone Number" autocomplete="tel">
       </div>
 
       <div class="form-group">
@@ -73,22 +94,27 @@
     }
 
     function handleAuth() {
-      var email = document.getElementById('emailInput').value.trim();
+      var phone = document.getElementById('phoneInput').value.trim();
       var password = document.getElementById('passwordInput').value;
       var errorEl = document.getElementById('authError');
       errorEl.classList.add('hidden');
       errorEl.textContent = '';
 
-      if (!email || !password) {
-        errorEl.textContent = __('common.error') + ': ' + __('auth.email') + ' / ' + __('auth.password') + ' required';
+      if (!phone || !password) {
+        errorEl.textContent = __('common.error') + ': ' + __('auth.phone') + ' / ' + __('auth.password') + ' required';
         errorEl.classList.remove('hidden');
         return;
       }
 
       if (isRegisterMode) {
-        var name = document.getElementById('nameInput').value.trim();
-        if (!name) {
-          errorEl.textContent = __('common.error') + ': ' + __('auth.name') + ' required';
+        var firstName = document.getElementById('firstNameInput').value.trim();
+        var lastName = document.getElementById('lastNameInput').value.trim();
+        var dob = document.getElementById('dobInput').value;
+        var gender = document.getElementById('genderInput').value;
+        var location = document.getElementById('locationInput').value.trim();
+
+        if (!firstName || !lastName || !dob || !location) {
+          errorEl.textContent = __('common.error') + ': ' + __('auth.firstName') + ', ' + __('auth.lastName') + ', ' + __('auth.dob') + ', ' + __('auth.location') + ' required';
           errorEl.classList.remove('hidden');
           return;
         }
@@ -99,8 +125,16 @@
       btn.textContent = __('common.loading');
 
       var promise = isRegisterMode
-        ? registerUser(document.getElementById('nameInput').value.trim(), email, password)
-        : loginUser(email, password);
+        ? registerUser(
+            document.getElementById('firstNameInput').value.trim(),
+            document.getElementById('lastNameInput').value.trim(),
+            phone,
+            document.getElementById('dobInput').value,
+            document.getElementById('genderInput').value,
+            document.getElementById('locationInput').value.trim(),
+            password
+          )
+        : loginUser(phone, password);
 
       promise.then(function () {
         window.location.href = 'index.html';
@@ -118,11 +152,11 @@
       }
     });
 
-    document.getElementById('passwordInput').addEventListener('keydown', function (e) {
-      if (e.key === 'Enter') handleAuth();
-    });
-    document.getElementById('emailInput').addEventListener('keydown', function (e) {
-      if (e.key === 'Enter') handleAuth();
+    ['passwordInput', 'phoneInput', 'dobInput', 'firstNameInput', 'lastNameInput', 'locationInput'].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) el.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') handleAuth();
+      });
     });
   </script>
 </body>

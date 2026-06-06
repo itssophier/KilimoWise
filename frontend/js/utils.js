@@ -1,11 +1,11 @@
 function formatCurrency(amount) {
-  const num = Number(amount) || 0;
+  var num = Number(amount) || 0;
   return 'KES ' + num.toLocaleString('en-KE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 function formatDate(isoString) {
   if (!isoString) return '';
-  const d = new Date(isoString);
+  var d = new Date(isoString);
   return d.toLocaleDateString('en-KE', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 

@@ -8,13 +8,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
 function getCategoryLabel(cat) {
   var labels = {
-    seeds: __('budget.seeds'),
-    fertilizer: __('budget.fertilizer'),
-    pesticides: __('budget.pesticides'),
-    veterinary: __('budget.veterinary'),
-    labor: __('budget.labor'),
-    transport: __('budget.transport'),
-    other: __('budget.other')
+    SEEDS: __('budget.seeds'),
+    FERTILIZER: __('budget.fertilizer'),
+    PESTICIDES: __('budget.pesticides'),
+    VETERINARY: __('budget.veterinary'),
+    LABOR: __('budget.labor'),
+    TRANSPORT: __('budget.transport'),
+    OTHER: __('budget.other')
   };
   return labels[cat] || cat;
 }
@@ -33,13 +33,13 @@ function handleAddExpense() {
     return;
   }
 
-  var farmer = getFarmer();
+  var farmerId = getFarmerId();
   var btn = document.getElementById('addBtn');
   btn.disabled = true;
   btn.textContent = __('common.loading');
 
-  if (!isOfflineMode && farmer && farmer.id) {
-    addExpense(farmer.id, category, amount, description).then(function () {
+  if (!isOfflineMode && farmerId) {
+    addExpense(farmerId, category, amount, description).then(function () {
       btn.disabled = false;
       btn.textContent = __('budget.add');
       document.getElementById('expenseAmount').value = '';
@@ -47,6 +47,7 @@ function handleAddExpense() {
       loadExpenses();
       showToast('Expense added!', 'success');
     }).catch(function () {
+      showToast('Backend unavailable, saving offline', 'info');
       fallbackAddExpense(category, amount, description);
       btn.disabled = false;
       btn.textContent = __('budget.add');
@@ -65,7 +66,7 @@ function fallbackAddExpense(category, amount, description) {
     category: category,
     amount: amount,
     description: description,
-    createdAt: new Date().toISOString()
+    expenseDate: new Date().toISOString().split('T')[0]
   });
   localStorage.setItem(EXPENSES_KEY, JSON.stringify(expenses));
   isOfflineMode = true;
@@ -77,7 +78,7 @@ function fallbackAddExpense(category, amount, description) {
 }
 
 function loadExpenses() {
-  var farmer = getFarmer();
+  var farmerId = getFarmerId();
   var listEl = document.getElementById('expenseList');
   var totalEl = document.getElementById('totalExpenses');
   var emptyEl = document.getElementById('emptyState');
@@ -87,8 +88,8 @@ function loadExpenses() {
   listEl.innerHTML = '';
   totalEl.textContent = 'KES 0.00';
 
-  if (!isOfflineMode && farmer && farmer.id) {
-    getExpenses(farmer.id).then(function (expenses) {
+  if (!isOfflineMode && farmerId) {
+    getExpenses(farmerId).then(function (expenses) {
       loadingEl.classList.add('hidden');
       if (!expenses || expenses.length === 0) {
         emptyEl.classList.remove('hidden');
@@ -131,7 +132,7 @@ function renderExpenses(expenses) {
       '<div class="expense-left">' +
         '<div><span class="badge badge-category">' + escapeHtml(getCategoryLabel(exp.category)) + '</span></div>' +
         '<div class="expense-desc">' + escapeHtml(exp.description || '') + '</div>' +
-        '<div class="expense-date">' + formatDate(exp.createdAt) + '</div>' +
+        '<div class="expense-date">' + formatDate(exp.expenseDate) + '</div>' +
       '</div>' +
       '<div class="expense-amount">' + formatCurrency(exp.amount) + '</div>';
     listEl.appendChild(div);
