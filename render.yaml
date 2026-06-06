@@ -53,7 +53,7 @@ services:
     name: kilimowise-frontend
     runtime: docker
     dockerfilePath: frontend/Dockerfile
-    dockerContext: .
+    dockerContext: frontend
     plan: free
     autoDeploy: true
     envVars:
