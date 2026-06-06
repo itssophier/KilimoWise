@@ -11,11 +11,23 @@ services:
     dockerfilePath: Dockerfile
     dockerContext: .
     plan: free
+    healthCheckPath: /actuator/health
+    autoDeploy: true
     envVars:
+      - key: PORT
+        value: 8080
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
       - key: GEMINI_API_KEY
         sync: false
       - key: JWT_SECRET
         generateValue: true
+      - key: JWT_EXPIRATION_MS
+        value: 86400000
+      - key: GEMINI_MODEL
+        value: gemini-2.5-flash-lite
+      - key: SPRING_DATASOURCE_URL
+        value: jdbc:postgresql://${PGHOST}:${PGPORT}/${PGDATABASE}?sslmode=require
       - key: PGHOST
         fromDatabase:
           name: kilimowise-db
@@ -36,3 +48,14 @@ services:
         fromDatabase:
           name: kilimowise-db
           property: password
+
+  - type: web
+    name: kilimowise-frontend
+    runtime: docker
+    dockerfilePath: frontend/Dockerfile
+    dockerContext: .
+    plan: free
+    autoDeploy: true
+    envVars:
+      - key: GRAPHQL_URL
+        value: https://kilimowise-backend.onrender.com/graphql

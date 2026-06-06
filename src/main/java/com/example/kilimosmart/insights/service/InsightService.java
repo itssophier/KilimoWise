@@ -1,57 +1,68 @@
 package com.example.kilimosmart.insights.service;
 
 import com.example.kilimosmart.advisory.service.GeminiServiceAPI;
+import com.example.kilimosmart.config.errors.ApiException;
 import com.example.kilimosmart.farmer.entity.Farmer;
 import com.example.kilimosmart.farmer.repository.FarmerRepository;
 import com.example.kilimosmart.insights.dto.InsightResponseDto;
 import com.example.kilimosmart.insights.dto.InsightResponseDto.InsightItem;
-import lombok.RequiredArgsConstructor;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class InsightService {
 
-    private static final long CACHE_TTL_HOURS = 6L;
+    private static final Duration CACHE_TTL = Duration.ofHours(6);
     private static final DateTimeFormatter MONTH_FMT = DateTimeFormatter.ofPattern("MMMM", Locale.ENGLISH);
 
     private final FarmerRepository farmerRepository;
     private final GeminiServiceAPI geminiServiceAPI;
     private final ObjectMapper objectMapper;
 
-    private final ConcurrentMap<String, CachedInsight> cache = new ConcurrentHashMap<>();
+    private final Cache<String, InsightResponseDto> cache = Caffeine.newBuilder()
+            .expireAfterWrite(CACHE_TTL)
+            .maximumSize(5_000)
+            .build();
+
+    public InsightService(FarmerRepository farmerRepository,
+                          GeminiServiceAPI geminiServiceAPI,
+                          ObjectMapper objectMapper) {
+        this.farmerRepository = farmerRepository;
+        this.geminiServiceAPI = geminiServiceAPI;
+        this.objectMapper = objectMapper;
+    }
 
     public InsightResponseDto getInsights(Long farmerId) {
 
         Farmer farmer = farmerRepository.findById(farmerId)
-                .orElseThrow(() -> new RuntimeException("Farmer not found"));
+                .orElseThrow(() -> ApiException.notFound("Farmer"));
 
         String month = LocalDate.now().format(MONTH_FMT);
         String location = farmer.getLocation() != null ? farmer.getLocation() : "Kenya";
-        String cacheKey = farmerId + ":" + month + ":" + location.toLowerCase(Locale.ROOT);
+        String cacheKey = (farmerId + ":" + month + ":" + location).toLowerCase(Locale.ROOT);
 
-        CachedInsight cached = cache.get(cacheKey);
-        if (cached != null && !cached.isExpired()) {
-            return cached.payload();
+        InsightResponseDto cached = cache.getIfPresent(cacheKey);
+        if (cached != null) {
+            return cached;
         }
 
         String rawJson = geminiServiceAPI.generateInsights(farmer, month);
         InsightResponseDto parsed = parse(rawJson, month, location);
 
-        cache.put(cacheKey, new CachedInsight(parsed, System.currentTimeMillis() + CACHE_TTL_HOURS * 3_600_000L));
+        cache.put(cacheKey, parsed);
 
         return parsed;
     }
@@ -124,11 +135,5 @@ public class InsightService {
                         new InsightItem("Record keeping", "Log every input and harvest; data beats guesswork when planning next season.")
                 )
         );
-    }
-
-    private record CachedInsight(InsightResponseDto payload, long expiresAt) {
-        boolean isExpired() {
-            return System.currentTimeMillis() > expiresAt;
-        }
     }
 }

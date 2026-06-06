@@ -1,7 +1,10 @@
 package com.example.kilimosmart.auth.dto;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+
 public record LoginRequest(
-        String phoneNumber,
-        String password
+        @NotBlank @Size(max = 20) String phoneNumber,
+        @NotBlank @Size(max = 100) String password
 ) {
 }

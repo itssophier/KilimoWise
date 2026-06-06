@@ -1,5 +1,6 @@
 package com.example.kilimosmart.expense.service;
 
+import com.example.kilimosmart.config.errors.ApiException;
 import com.example.kilimosmart.expense.dto.ExpenseStatsDto;
 import com.example.kilimosmart.expense.dto.ExpenseStatsDto.MonthlyTotal;
 import com.example.kilimosmart.expense.dto.ExpensesInput;
@@ -29,7 +30,7 @@ public class ExpensesService {
     public Expenses addExpense(ExpensesInput input) {
 
         Farmer farmer = farmerRepository.findById(input.farmerId())
-                .orElseThrow(() -> new RuntimeException("Farmer not found"));
+                .orElseThrow(() -> ApiException.notFound("Farmer"));
 
         LocalDate date = input.expenseDate() != null ? input.expenseDate() : LocalDate.now();
 

@@ -4,6 +4,7 @@ import com.example.kilimosmart.advisory.dto.AdvisoryInput;
 import com.example.kilimosmart.advisory.dto.AdvisoryResponseDto;
 import com.example.kilimosmart.advisory.model.Advisory;
 import com.example.kilimosmart.advisory.repository.AdvisoryRepository;
+import com.example.kilimosmart.config.errors.ApiException;
 import com.example.kilimosmart.farmer.entity.Farmer;
 import com.example.kilimosmart.farmer.repository.FarmerRepository;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +23,7 @@ public class AdvisoryService {
     public AdvisoryResponseDto analyzeProblem(AdvisoryInput input) {
 
         Farmer farmer = farmerRepository.findById(input.farmerId())
-                .orElseThrow(() -> new RuntimeException("Farmer not found"));
+                .orElseThrow(() -> ApiException.notFound("Farmer"));
 
         AdvisoryResponseDto response = geminiServiceAPI.analyze(
                 farmer,

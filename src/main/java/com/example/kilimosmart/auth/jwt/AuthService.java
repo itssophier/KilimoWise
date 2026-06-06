@@ -2,6 +2,7 @@ package com.example.kilimosmart.auth.jwt;
 
 import com.example.kilimosmart.auth.dto.LoginRequest;
 import com.example.kilimosmart.auth.dto.LoginResponse;
+import com.example.kilimosmart.config.errors.ApiException;
 import com.example.kilimosmart.farmer.entity.Farmer;
 import com.example.kilimosmart.farmer.repository.FarmerRepository;
 import lombok.RequiredArgsConstructor;
@@ -19,10 +20,10 @@ public class AuthService {
     public LoginResponse login(LoginRequest request) {
 
         Farmer farmer = farmerRepository.findByPhoneNumber(request.phoneNumber())
-                .orElseThrow(() -> new RuntimeException("Invalid credentials"));
+                .orElseThrow(() -> ApiException.badRequest("Invalid credentials"));
 
         if (!passwordEncoder.matches(request.password(), farmer.getPassword())) {
-            throw new RuntimeException("Invalid credentials");
+            throw ApiException.badRequest("Invalid credentials");
         }
 
         String token = jwtService.generateToken(farmer.getId());

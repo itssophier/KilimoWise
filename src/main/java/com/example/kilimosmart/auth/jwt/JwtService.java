@@ -15,6 +15,8 @@ import java.util.Date;
 @Service
 public class JwtService {
 
+    private static final int MIN_SECRET_BYTES = 32;
+
     @Value("${jwt.secret:}")
     private String secretString;
 
@@ -27,14 +29,16 @@ public class JwtService {
     public void init() {
         if (secretString == null || secretString.isBlank()) {
             throw new IllegalStateException(
-                    "jwt.secret property (or JWT_SECRET env var) must be set to a strong secret (>= 32 bytes).");
+                    "JWT_SECRET env var (or jwt.secret property) must be set to a strong secret (>= "
+                            + MIN_SECRET_BYTES + " bytes). Refusing to start.");
         }
         byte[] keyBytes = secretString.getBytes(StandardCharsets.UTF_8);
-        if (keyBytes.length < 32) {
+        if (keyBytes.length < MIN_SECRET_BYTES) {
             throw new IllegalStateException(
-                    "jwt.secret must be at least 32 bytes (256 bits) for HS256. Got " + keyBytes.length + " bytes.");
+                    "JWT_SECRET must be at least " + MIN_SECRET_BYTES + " bytes (256 bits) for HS256. Got "
+                            + keyBytes.length + " bytes. Refusing to start.");
         }
-        secretKey = Keys.hmacShaKeyFor(keyBytes);
+        this.secretKey = Keys.hmacShaKeyFor(keyBytes);
     }
 
     public String generateToken(Long farmerId) {
