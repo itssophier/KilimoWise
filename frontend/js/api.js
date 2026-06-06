@@ -64,3 +64,17 @@ function getExpenses(farmerId) {
     { farmerId: farmerId }
   ).then(function (data) { return data.getExpense; });
 }
+
+function getExpenseStatsApi(farmerId) {
+  return graphqlRequest(
+    'query GetExpenseStats($farmerId: ID!) { getExpenseStats(farmerId: $farmerId) { totalAllTime totalThisMonth totalLastMonth monthChangePercent topCategory topCategoryAmount byCategory monthlyTrend { month total } } }',
+    { farmerId: farmerId }
+  ).then(function (data) { return data.getExpenseStats; });
+}
+
+function getInsightsApi(farmerId) {
+  return graphqlRequest(
+    'query GetInsights($farmerId: ID!) { getInsights(farmerId: $farmerId) { generatedFor month location seasonal { title content } market { title content } tips { title content } } }',
+    { farmerId: farmerId }
+  ).then(function (data) { return data.getInsights; });
+}

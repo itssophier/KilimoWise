@@ -11,7 +11,9 @@ public class GraphQLConfig {
 
     @Bean
     RuntimeWiringConfigurer runtimeWiringConfigurer() {
-        return wiring -> wiring.scalar(ExtendedScalars.GraphQLBigDecimal);
+        return wiring -> wiring
+                .scalar(ExtendedScalars.GraphQLBigDecimal)
+                .scalar(ExtendedScalars.Json);
     }
 }
 

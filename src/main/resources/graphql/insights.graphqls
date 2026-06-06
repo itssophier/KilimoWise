@@ -1,0 +1,17 @@
+type InsightItem {
+    title: String
+    content: String
+}
+
+type Insights {
+    generatedFor: String
+    month: String
+    location: String
+    seasonal: [InsightItem]
+    market: [InsightItem]
+    tips: [InsightItem]
+}
+
+extend type Query {
+    getInsights(farmerId: ID!): Insights
+}

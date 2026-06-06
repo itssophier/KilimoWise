@@ -19,6 +19,7 @@
   <script src="js/api.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/budget.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
   <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('service-worker.js');
@@ -38,6 +39,53 @@
     <div class="card card-elevated text-center fade-up" style="padding:22px 18px;">
       <div class="card-title" data-i18n="budget.total">Total Spending</div>
       <div id="totalExpenses" class="budget-total">KES 0.00</div>
+    </div>
+
+    <div class="stat-grid fade-up">
+      <div class="stat-tile">
+        <div class="stat-label" data-i18n="budget.thisMonth">This Month</div>
+        <div class="stat-value" id="statThisMonth">KES 0</div>
+      </div>
+      <div class="stat-tile">
+        <div class="stat-label" data-i18n="budget.lastMonth">Last Month</div>
+        <div class="stat-value stat-value-muted" id="statLastMonth">KES 0</div>
+      </div>
+      <div class="stat-tile">
+        <div class="stat-label" data-i18n="budget.topCategory">Top Category</div>
+        <div class="stat-value stat-value-sm" id="statTopCategory">—</div>
+      </div>
+      <div class="stat-tile">
+        <div class="stat-label" data-i18n="budget.monthChange">vs Last Month</div>
+        <div class="stat-value" id="statMonthChange">0%</div>
+      </div>
+    </div>
+
+    <div class="card fade-up">
+      <h3 class="card-title">
+        <span class="card-title-icon">📊</span>
+        <span data-i18n="budget.spendingByCategory">Spending by Category</span>
+      </h3>
+      <div class="chart-wrap">
+        <canvas id="categoryChart"></canvas>
+      </div>
+      <div id="categoryChartEmpty" class="empty-state hidden">
+        <span class="empty-icon">📊</span>
+        <p data-i18n="budget.noChartData">Add expenses to see your category breakdown</p>
+      </div>
+    </div>
+
+    <div class="card fade-up">
+      <h3 class="card-title">
+        <span class="card-title-icon">📈</span>
+        <span data-i18n="budget.monthlyTrend">Last 6 Months</span>
+      </h3>
+      <div class="chart-wrap">
+        <canvas id="trendChart"></canvas>
+      </div>
+      <div id="trendChartEmpty" class="empty-state hidden">
+        <span class="empty-icon">📈</span>
+        <p data-i18n="budget.noChartData">Add expenses to see your monthly trend</p>
+      </div>
     </div>
 
     <div class="card fade-up">

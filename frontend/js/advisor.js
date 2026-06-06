@@ -13,6 +13,8 @@ function bindImageUpload() {
   var previewWrap = document.getElementById('imagePreview');
   var previewImg = document.getElementById('previewImg');
   var removeBtn = document.getElementById('removeImageBtn');
+  var uploadZone = document.getElementById('uploadZone');
+  var uploadText = uploadZone ? uploadZone.querySelector('.upload-text > div:first-child') : null;
 
   if (!imageInput) return;
 
@@ -26,8 +28,11 @@ function bindImageUpload() {
     }
     compressImage(file, 1024, 0.78).then(function (base64) {
       selectedImageBase64 = base64;
-      previewImg.src = base64;
+      previewImg.src = 'data:image/jpeg;base64,' + base64;
       previewWrap.classList.remove('hidden');
+      if (uploadText) {
+        uploadText.textContent = '✓ ' + __('advisor.imageAttached');
+      }
     }).catch(function (err) {
       showToast('Could not read image', 'error');
     });
@@ -41,6 +46,9 @@ function bindImageUpload() {
       imageInput.value = '';
       previewWrap.classList.add('hidden');
       previewImg.src = '';
+      if (uploadText) {
+        uploadText.textContent = __('advisor.upload');
+      }
     });
   }
 }
@@ -130,9 +138,8 @@ function displayResults(result) {
   diagnosisEl.textContent = result.diagnosis || '—';
   solutionEl.textContent = result.solution || '—';
 
-  var conf = parseFloat(result.confidence) || 0;
-  if (conf > 0 && conf <= 1) conf = conf * 100;
-  confidenceEl.textContent = conf.toFixed(0) + '%';
+  var conf = normalizeConfidence(result.confidence);
+  confidenceEl.textContent = conf + '%';
   requestAnimationFrame(function () {
     confidenceFill.style.width = conf + '%';
   });
@@ -187,12 +194,11 @@ function renderHistory() {
   history.forEach(function (item) {
     var card = document.createElement('div');
     card.className = 'insight-card fade-up';
-    var conf = parseFloat(item.confidence) || 0;
-    if (conf > 0 && conf <= 1) conf = conf * 100;
+    var conf = normalizeConfidence(item.confidence);
     var badge = item.type === 'ANIMAL' ? '🐄' : '🌱';
     card.innerHTML =
       '<div class="flex-between mb-8"><h3>' + escapeHtml(item.diagnosis || __('advisor.diagnosis')) + '</h3>' +
-      '<span class="badge badge-confidence">' + badge + ' ' + conf.toFixed(0) + '%</span></div>' +
+      '<span class="badge badge-confidence">' + badge + ' ' + conf + '%</span></div>' +
       '<p class="text-secondary mb-8">' + escapeHtml(item.input || '') + '</p>' +
       '<small class="text-secondary">' + formatDate(item.generatedAt) + '</small>';
     card.addEventListener('click', function () {

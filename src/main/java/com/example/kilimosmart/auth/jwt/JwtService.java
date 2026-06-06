@@ -15,10 +15,11 @@ import java.util.Date;
 @Service
 public class JwtService {
 
-    private static final long EXPIRATION_MS = 24 * 60 * 60 * 1000L;
-
-    @Value("${JWT_SECRET:}")
+    @Value("${jwt.secret:}")
     private String secretString;
+
+    @Value("${jwt.expiration:86400000}")
+    private long expirationMs;
 
     private SecretKey secretKey;
 
@@ -26,12 +27,12 @@ public class JwtService {
     public void init() {
         if (secretString == null || secretString.isBlank()) {
             throw new IllegalStateException(
-                    "JWT_SECRET environment variable must be set to a strong secret (>= 32 bytes).");
+                    "jwt.secret property (or JWT_SECRET env var) must be set to a strong secret (>= 32 bytes).");
         }
         byte[] keyBytes = secretString.getBytes(StandardCharsets.UTF_8);
         if (keyBytes.length < 32) {
             throw new IllegalStateException(
-                    "JWT_SECRET must be at least 32 bytes (256 bits) for HS256.");
+                    "jwt.secret must be at least 32 bytes (256 bits) for HS256. Got " + keyBytes.length + " bytes.");
         }
         secretKey = Keys.hmacShaKeyFor(keyBytes);
     }
@@ -41,7 +42,7 @@ public class JwtService {
         return Jwts.builder()
                 .setSubject(String.valueOf(farmerId))
                 .setIssuedAt(now)
-                .setExpiration(new Date(now.getTime() + EXPIRATION_MS))
+                .setExpiration(new Date(now.getTime() + expirationMs))
                 .signWith(secretKey)
                 .compact();
     }

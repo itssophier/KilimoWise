@@ -33,9 +33,14 @@
   </header>
 
   <main class="container">
+    <div class="insight-refresh-bar fade-up">
+      <div id="insightMeta" class="cached-info"></div>
+      <button id="refreshInsightsBtn" class="btn-link" onclick="refreshInsights()">↻ <span data-i18n="insights.refresh">Refresh</span></button>
+    </div>
+
     <div id="loadingState" class="loading-state">
       <div class="spinner lg"></div>
-      <p data-i18n="common.loading">Loading...</p>
+      <p data-i18n="insights.generating">Generating personalized insights...</p>
     </div>
 
     <section class="insight-section">

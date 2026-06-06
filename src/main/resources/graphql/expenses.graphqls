@@ -24,8 +24,27 @@ input ExpensesInput {
     expenseDate: String
 }
 
+type MonthlyTotal {
+    month: String
+    total: Float
+}
+
+type ExpenseStats {
+    totalAllTime: Float
+    totalThisMonth: Float
+    totalLastMonth: Float
+    monthChangePercent: Float
+    topCategory: String
+    topCategoryAmount: Float
+    byCategory: JSON
+    monthlyTrend: [MonthlyTotal]
+}
+
+scalar JSON
+
 extend type Query {
     getExpense(farmerId: ID!): [Expenses]
+    getExpenseStats(farmerId: ID!): ExpenseStats
 }
 
 extend type Mutation {

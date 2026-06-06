@@ -25,6 +25,7 @@ public class AdvisoryService {
                 .orElseThrow(() -> new RuntimeException("Farmer not found"));
 
         AdvisoryResponseDto response = geminiServiceAPI.analyze(
+                farmer,
                 input.type().name(),
                 input.description(),
                 input.imageBase64()

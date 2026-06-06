@@ -48,3 +48,16 @@ function escapeHtml(str) {
   div.textContent = str;
   return div.innerHTML;
 }
+
+function normalizeConfidence(value) {
+  if (value === null || value === undefined) return 0;
+  var s = String(value).trim();
+  if (!s) return 0;
+  var hasPercent = s.indexOf('%') >= 0;
+  var n = parseFloat(s);
+  if (isNaN(n)) return 0;
+  if (!hasPercent && n > 0 && n <= 1) n = n * 100;
+  if (n < 0) n = 0;
+  if (n > 100) n = 100;
+  return Math.round(n);
+}

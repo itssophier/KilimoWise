@@ -1,4 +1,5 @@
 var INSIGHTS_CACHE_KEY = 'kilimowise_insights_cache';
+var INSIGHTS_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
 
 var STATIC_SEASONS = [
   { crop: 'Maize', season: 'Long Rains', description: 'Plant maize from March to May for best yields. Prepare soil with organic compost 2 weeks before planting.' },
@@ -18,33 +19,89 @@ var STATIC_TIPS = [
   { content: 'Monitor weather forecasts regularly to plan planting and harvesting schedules.' }
 ];
 
+var fallbackInsights = {
+  seasonal: STATIC_SEASONS.map(function (s) { return { title: s.crop + ' — ' + s.season, content: s.description }; }),
+  market: STATIC_MARKET,
+  tips: STATIC_TIPS
+};
+
 document.addEventListener('DOMContentLoaded', function () {
   redirectIfNotLoggedIn();
   loadInsights();
 });
 
-function loadInsights() {
+function loadInsights(forceRefresh) {
   showLoading(true);
+  hideMeta();
 
   var cached = getCachedInsights();
-  if (cached) {
+  if (!forceRefresh && cached && isCacheFresh(cached)) {
     showLoading(false);
-    renderInsights(cached);
+    renderInsights(cached.payload);
+    showMeta(formatRelativeTime(cached.savedAt), false);
     return;
   }
 
-  var data = {
-    seasons: STATIC_SEASONS,
-    market: STATIC_MARKET,
-    tips: STATIC_TIPS
+  var farmerId = getFarmerId();
+  if (!farmerId) {
+    showLoading(false);
+    renderInsights(fallbackInsights);
+    showMeta('—', true);
+    return;
+  }
+
+  if (typeof getInsightsApi !== 'function') {
+    showLoading(false);
+    renderInsights(fallbackInsights);
+    showMeta('—', true);
+    return;
+  }
+
+  getInsightsApi(farmerId).then(function (data) {
+    showLoading(false);
+    if (!data) {
+      renderInsights(fallbackInsights);
+      showMeta('—', true);
+      return;
+    }
+    var payload = normalizeInsights(data);
+    renderInsights(payload);
+    cacheInsights({ payload: payload, savedAt: Date.now() });
+    showMeta(formatRelativeTime(Date.now()), false);
+  }).catch(function () {
+    showLoading(false);
+    if (cached && cached.payload) {
+      renderInsights(cached.payload);
+      showMeta('Offline · ' + formatRelativeTime(cached.savedAt), true);
+    } else {
+      renderInsights(fallbackInsights);
+      showMeta('—', true);
+    }
+  });
+}
+
+function refreshInsights() {
+  loadInsights(true);
+}
+
+function normalizeInsights(data) {
+  function toItems(arr, withTitle) {
+    if (!arr) return [];
+    return arr.map(function (x) {
+      return withTitle
+        ? { title: x.title || '', content: x.content || '' }
+        : { content: x.content || '' };
+    }).filter(function (x) { return x.content; });
+  }
+  return {
+    seasonal: toItems(data.seasonal, true),
+    market: toItems(data.market, true),
+    tips: toItems(data.tips, false)
   };
-  cacheInsights(data);
-  showLoading(false);
-  renderInsights(data);
 }
 
 function renderInsights(data) {
-  renderSeasons(data.seasons);
+  renderSeasons(data.seasonal);
   renderMarket(data.market);
   renderTips(data.tips);
 }
@@ -65,10 +122,10 @@ function renderSeasons(seasons) {
     card.className = 'insight-card alt fade-up';
     card.innerHTML =
       '<div class="flex-between mb-8">' +
-        '<h3>' + escapeHtml(s.crop || '—') + '</h3>' +
-        '<span class="badge badge-season">' + escapeHtml(s.season || '') + '</span>' +
+        '<h3>' + escapeHtml(s.title || '—') + '</h3>' +
+        '<span class="badge badge-season">📅 ' + __('insights.seasonal') + '</span>' +
       '</div>' +
-      '<p>' + escapeHtml(s.description || '') + '</p>';
+      '<p>' + escapeHtml(s.content || '') + '</p>';
     el.appendChild(card);
   });
 }
@@ -108,10 +165,11 @@ function renderTips(tips) {
   tips.forEach(function (t, i) {
     var card = document.createElement('div');
     card.className = 'insight-card fade-up';
+    var titleText = t.title && t.title.trim() ? t.title : ('💡 ' + __('insights.tips') + ' ' + (i + 1));
     card.innerHTML =
       '<div class="flex-between mb-8">' +
-        '<h3>💡 Tip ' + (i + 1) + '</h3>' +
-        '<span class="badge badge-confidence">Farming</span>' +
+        '<h3>' + escapeHtml(titleText) + '</h3>' +
+        '<span class="badge badge-confidence">' + __('insights.tips') + '</span>' +
       '</div>' +
       '<p>' + escapeHtml(t.content || '—') + '</p>';
     el.appendChild(card);
@@ -120,6 +178,31 @@ function renderTips(tips) {
 
 function showLoading(show) {
   document.getElementById('loadingState').classList.toggle('hidden', !show);
+}
+
+function showMeta(text, isFallback) {
+  var el = document.getElementById('insightMeta');
+  if (!el) return;
+  el.textContent = (isFallback ? '⚠ ' : '✓ ') + text;
+  el.style.color = isFallback ? 'var(--text-muted)' : 'var(--primary)';
+}
+
+function hideMeta() {
+  var el = document.getElementById('insightMeta');
+  if (el) el.textContent = '';
+}
+
+function formatRelativeTime(ts) {
+  if (!ts) return '';
+  var diff = Date.now() - ts;
+  if (diff < 60_000) return 'just now';
+  if (diff < 3_600_000) return Math.floor(diff / 60_000) + ' min ago';
+  if (diff < 7_200_000) return '1 hour ago';
+  return Math.floor(diff / 3_600_000) + ' hours ago';
+}
+
+function isCacheFresh(cached) {
+  return cached && cached.savedAt && (Date.now() - cached.savedAt) < INSIGHTS_CACHE_TTL_MS;
 }
 
 function cacheInsights(data) {

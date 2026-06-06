@@ -1,0 +1,14 @@
+type LoginResponse {
+    token: String!
+    farmerId: ID!
+    name: String
+}
+
+input LoginRequest {
+    phoneNumber: String!
+    password: String!
+}
+
+extend type Mutation {
+    login(input: LoginRequest!): LoginResponse
+}

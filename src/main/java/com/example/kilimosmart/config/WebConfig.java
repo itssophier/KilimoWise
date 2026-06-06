@@ -14,6 +14,8 @@ public class WebConfig implements WebMvcConfigurer {
                 .allowedOriginPatterns(
                         "http://localhost:3000",
                         "http://127.0.0.1:3000",
+                        "http://localhost:63342",
+                        "http://127.0.0.1:63342",
                         "https://*.onrender.com",
                         "https://*.vercel.app",
                         "https://*.netlify.app"
