@@ -7,10 +7,10 @@ databases:
 services:
   - type: web
     name: kilimowise-backend
-    runtime: java
+    runtime: docker
+    dockerfilePath: Dockerfile
+    dockerContext: .
     plan: free
-    buildCommand: ./mvnw clean package -DskipTests
-    startCommand: java -jar target/*.jar
     envVars:
       - key: GEMINI_API_KEY
         sync: false
