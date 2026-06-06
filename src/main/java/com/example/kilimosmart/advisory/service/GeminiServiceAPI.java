@@ -59,7 +59,8 @@ public class GeminiServiceAPI {
 
             log.info("Gemini TEXT OUTPUT: {}", text);
 
-            return objectMapper.readValue(text, AdvisoryResponseDto.class);
+            String cleanedJson = stripCodeFences(text);
+            return objectMapper.readValue(cleanedJson, AdvisoryResponseDto.class);
 
         } catch (Exception e) {
             log.error("Gemini failed", e);
@@ -223,6 +224,18 @@ public class GeminiServiceAPI {
             return base64.substring(comma + 1);
         }
         return base64;
+    }
+
+    private String stripCodeFences(String raw) {
+        if (raw == null) return "";
+        String s = raw.trim();
+        if (s.startsWith("```")) {
+            int firstNewline = s.indexOf('\n');
+            if (firstNewline >= 0) s = s.substring(firstNewline + 1);
+            int lastFence = s.lastIndexOf("```");
+            if (lastFence >= 0) s = s.substring(0, lastFence);
+        }
+        return s.trim();
     }
 
     private String detectImageMime(String cleanedBase64) {
