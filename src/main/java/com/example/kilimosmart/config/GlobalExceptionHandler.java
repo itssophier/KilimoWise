@@ -1,5 +1,7 @@
 package com.example.kilimosmart.config;
 
+import com.example.kilimosmart.config.errors.ApiException;
+import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -18,43 +20,59 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<Map<String, Object>> handleNotReadable(HttpMessageNotReadableException ex) {
-        log.error("HttpMessageNotReadableException: {}", ex.getMessage(), ex);
-        Throwable cause = ex.getMostSpecificCause();
-        log.error("Cause class: {}, message: {}", cause != null ? cause.getClass().getName() : "null", cause != null ? cause.getMessage() : "null");
+        log.warn("Malformed request body: {}", ex.getMostSpecificCause().getMessage());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(Map.of(
                         "status", 400,
                         "error", "Bad Request",
+                        "message", "Malformed request body"
+                ));
+    }
+
+    @ExceptionHandler(ApiException.class)
+    public ResponseEntity<Map<String, Object>> handleApi(ApiException ex) {
+        int status = "NOT_FOUND".equals(ex.getCode()) ? 404
+                : "CONFLICT".equals(ex.getCode()) ? 409
+                : "UPSTREAM_ERROR".equals(ex.getCode()) ? 502
+                : 400;
+        return ResponseEntity.status(status)
+                .body(Map.of(
+                        "status", status,
+                        "error", ex.getCode(),
+                        "code", ex.getCode(),
                         "message", ex.getMessage(),
-                        "cause", cause != null ? cause.getMessage() : "null"
+                        "retryable", ex.isRetryable()
+                ));
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<Map<String, Object>> handleConstraint(ConstraintViolationException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Map.of(
+                        "status", 400,
+                        "error", "Bad Request",
+                        "code", "VALIDATION_ERROR",
+                        "message", ex.getMessage()
                 ));
     }
 
     @ExceptionHandler(ResponseStatusException.class)
     public ResponseEntity<Map<String, Object>> handleStatus(ResponseStatusException ex) {
-        log.error("ResponseStatusException: {}", ex.getMessage(), ex);
         return ResponseEntity.status(ex.getStatusCode())
                 .body(Map.of(
                         "status", ex.getStatusCode().value(),
-                        "error", ex.getReason(),
-                        "message", ex.getMessage()
+                        "error", ex.getReason() != null ? ex.getReason() : ex.getStatusCode().toString()
                 ));
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleGeneric(Exception ex) {
-        log.error("Unhandled exception: {} - {}", ex.getClass().getName(), ex.getMessage(), ex);
-        Throwable cause = ex.getCause();
-        while (cause != null) {
-            log.error("Caused by: {} - {}", cause.getClass().getName(), cause.getMessage());
-            cause = cause.getCause();
-        }
+        log.error("Unhandled {}: {}", ex.getClass().getSimpleName(), ex.getMessage(), ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of(
                         "status", 500,
                         "error", "Internal Server Error",
-                        "exception", ex.getClass().getName(),
-                        "message", ex.getMessage() != null ? ex.getMessage() : "no message"
+                        "message", "An unexpected error occurred"
                 ));
     }
 }
