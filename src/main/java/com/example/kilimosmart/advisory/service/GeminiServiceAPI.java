@@ -60,7 +60,8 @@ public class GeminiServiceAPI {
             log.info("Gemini TEXT OUTPUT: {}", text);
 
             String cleanedJson = stripCodeFences(text);
-            return objectMapper.readValue(cleanedJson, AdvisoryResponseDto.class);
+            AdvisoryResponseDto parsed = objectMapper.readValue(cleanedJson, AdvisoryResponseDto.class);
+            return sanitize(parsed);
 
         } catch (Exception e) {
             log.error("Gemini failed", e);
@@ -134,22 +135,27 @@ public class GeminiServiceAPI {
                   "remedies": [
                     {
                       "name": "Specific product name e.g. 'Duduthrin 1.75EC (Lambda-cyhalothrin)'",
-                      "estimatedPrice": "KES 450 per 100ml",
-                      "amountNeeded": "20ml per 20L knapsack for 1 acre",
-                      "availabilityLocation": "Available at Amiran, agro-vet shops in <specific Kenyan town or 'nearest agrovet'>"
+                      "estimatedPrice": "KES 450 / 100ml (estimated Nairobi/regional retail 2024-25)",
+                      "amountNeeded": "20ml per 20L knapsack — enough for 1 acre",
+                      "availabilityLocation": "Agro-vet shops in <specific Kenyan town> and Amiran Kenya depots; ask for 'Duduthrin 1.75EC'"
                     }
                   ]
                 }
 
                 RULES
                 - confidence: decimal between 0 and 1 (e.g. 0.85 means 85 pct sure). Calibrate honestly.
-                - Output exactly 2-3 remedies. Each remedy must include a real product and a real Kenyan
+                - Output exactly 3 remedies. Each remedy must include a real product and a real Kenyan
                   availability channel. Do not invent brands; use the reference list or other well-known
-                  Kenyan brands (Pannar Seed, Royal Seed, Lagrotech, Greenlife, Juanco, Lachlan).
-                - Prices in KES and reflect typical Nairobi/regional retail in 2024-2025.
+                  Kenyan brands (Pannar Seed, Royal Seed, Lagrotech, Greenlife, Juanco, Lachlan, Osho, Amiran).
+                - Prices in KES and reflect typical Nairobi/regional retail in 2024-2025. ALWAYS include
+                  a KES amount. Format: "KES <number> per <unit>" or "KES <number> / <unit>". Never
+                  leave the price blank, and never say "varies" — give a real number, even if approximate.
                 - If you cannot confidently identify the problem, set confidence below 0.5 and recommend
                   a visit to the nearest agro-vet or extension officer.
                 - Adapt remedies to the farmer's location (e.g. highland vs coastal vs arid).
+                - amountNeeded must be a specific quantity (e.g. "20ml", "2kg", "1 sachet per 20L").
+                - availabilityLocation must name a town, city, or specific agro-dealer (e.g. "Nakuru
+                  agro-vet shops" or "Amiran depot, Nairobi").
                 - Do not include any text outside the JSON object.
                 """;
 
@@ -215,6 +221,63 @@ public class GeminiServiceAPI {
         return prompt
                 .replace("__MONTH__", currentMonth)
                 .replace("__LOC__", location);
+    }
+
+    private AdvisoryResponseDto sanitize(AdvisoryResponseDto dto) {
+        if (dto == null) {
+            return new AdvisoryResponseDto(
+                    "Unable to diagnose. Please try again or visit your nearest agro-vet.",
+                    "0.3",
+                    "We could not generate a solution. Try describing the problem with more detail, or contact your local extension officer.",
+                    java.util.List.of(
+                            new com.example.kilimosmart.advisory.dto.RemedyResponseDto(
+                                    "Visit nearest agro-vet",
+                                    "KES 200 - 500 consultation",
+                                    "1 visit",
+                                    "Any agro-vet shop in your town"
+                            )
+                    )
+            );
+        }
+        String diagnosis = (dto.diagnosis() == null || dto.diagnosis().isBlank())
+                ? "Unclear diagnosis — please re-describe with more detail"
+                : dto.diagnosis();
+        String confidence = (dto.confidence() == null || dto.confidence().isBlank()) ? "0.3" : dto.confidence();
+        String solution = (dto.solution() == null || dto.solution().isBlank())
+                ? "No detailed solution available. Visit your nearest agro-vet for in-person diagnosis."
+                : dto.solution();
+
+        List<com.example.kilimosmart.advisory.dto.RemedyResponseDto> remedies = dto.remedies() == null
+                ? new java.util.ArrayList<>()
+                : new java.util.ArrayList<>(dto.remedies());
+
+        if (remedies.isEmpty()) {
+            remedies.add(new com.example.kilimosmart.advisory.dto.RemedyResponseDto(
+                    "Visit nearest agro-vet for diagnosis",
+                    "KES 200 - 500 consultation fee",
+                    "1 consultation",
+                    "Any agro-vet shop in your town or KALRO office"
+            ));
+        }
+
+        java.util.List<com.example.kilimosmart.advisory.dto.RemedyResponseDto> cleaned = new java.util.ArrayList<>();
+        for (var r : remedies) {
+            String name = (r.name() == null || r.name().isBlank()) ? "Generic agro-vet recommendation" : r.name();
+            String price = (r.estimatedPrice() == null || r.estimatedPrice().isBlank()
+                    || r.estimatedPrice().equalsIgnoreCase("varies")
+                    || !r.estimatedPrice().toUpperCase().contains("KES"))
+                    ? "KES 200 - 1,500 (price varies by brand and quantity)"
+                    : r.estimatedPrice();
+            String amount = (r.amountNeeded() == null || r.amountNeeded().isBlank())
+                    ? "As per product label"
+                    : r.amountNeeded();
+            String avail = (r.availabilityLocation() == null || r.availabilityLocation().isBlank())
+                    ? "Agro-vet shops in your nearest town; ask for " + name.split("\\(")[0].trim()
+                    : r.availabilityLocation();
+            cleaned.add(new com.example.kilimosmart.advisory.dto.RemedyResponseDto(name, price, amount, avail));
+        }
+
+        return new AdvisoryResponseDto(diagnosis, confidence, solution, cleaned);
     }
 
     private String stripDataUrlPrefix(String base64) {
