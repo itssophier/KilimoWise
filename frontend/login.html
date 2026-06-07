@@ -271,12 +271,15 @@
 
     function showAuthError(msg) {
       var el = document.getElementById('authError');
-      el.querySelector('#authErrorMsg').textContent = msg;
+      if (!el) return;
+      var msgEl = el.querySelector('#authErrorMsg');
+      if (msgEl) msgEl.textContent = msg;
       el.classList.remove('hidden');
     }
 
     function clearAuthError() {
-      document.getElementById('authError').classList.add('hidden');
+      var el = document.getElementById('authError');
+      if (el) el.classList.add('hidden');
     }
 
     function handleAuth() {

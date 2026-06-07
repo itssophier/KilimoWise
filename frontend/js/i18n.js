@@ -436,7 +436,13 @@ var currentLang = (function () {
 })();
 
 function __(key) {
-  return (TRANSLATIONS[currentLang] && TRANSLATIONS[currentLang][key]) || TRANSLATIONS.en[key] || key;
+  if (!key) return '';
+  var t = TRANSLATIONS[currentLang] && TRANSLATIONS[currentLang][key];
+  if (t) return t;
+  var fallback = TRANSLATIONS.en && TRANSLATIONS.en[key];
+  if (fallback) return fallback;
+  var last = String(key).split('.').pop() || '';
+  return last.replace(/_/g, ' ').replace(/([a-z])([A-Z])/g, '$1 $2') || '';
 }
 
 function setLanguage(lang) {

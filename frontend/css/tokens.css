@@ -248,7 +248,7 @@
   --shadow-glow: 0 12px 28px rgba(75, 168, 114, 0.3);
   --shadow-glow-warm: 0 12px 28px rgba(217, 156, 44, 0.3);
 
-  --grad-hero: radial-gradient(ellipse at top left, var(--forest-700) 0%, var(--forest-900) 60%, #060a07 100%);
+  --grad-hero: radial-gradient(ellipse at top left, #1f5438 0%, #0a1a12 60%, #060a07 100%);
   --grad-paper: linear-gradient(180deg, transparent 0%, rgba(10, 13, 10, 0.4) 100%);
 }
 

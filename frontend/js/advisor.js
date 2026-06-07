@@ -6,6 +6,13 @@ var ADVISOR_HISTORY_KEY = 'kilimowise_advice_history';
 var ADVISOR_MAX_HISTORY = 8;
 var selectedImageBase64 = null;
 
+function $(id) {
+  return document.getElementById(id);
+}
+
+function hideEl(el) { if (el) el.classList.add('hidden'); }
+function showEl(el) { if (el) el.classList.remove('hidden'); }
+
 document.addEventListener('DOMContentLoaded', function () {
   redirectIfNotLoggedIn();
   renderHistory();
@@ -13,14 +20,14 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 function bindImageUpload() {
-  var imageInput = document.getElementById('imageInput');
-  var previewWrap = document.getElementById('imagePreview');
-  var previewImg = document.getElementById('previewImg');
-  var removeBtn = document.getElementById('removeImageBtn');
-  var uploadZone = document.getElementById('uploadZone');
-  var uploadTitle = document.getElementById('uploadTitle');
-
+  var imageInput = $('imageInput');
   if (!imageInput) return;
+
+  var previewWrap = $('imagePreview');
+  var previewImg = $('previewImg');
+  var removeBtn = $('removeImageBtn');
+  var uploadZone = $('uploadZone');
+  var uploadTitle = $('uploadTitle');
 
   imageInput.addEventListener('change', function (e) {
     var file = e.target.files && e.target.files[0];
@@ -32,8 +39,8 @@ function bindImageUpload() {
     }
     compressImage(file, 1024, 0.78).then(function (base64) {
       selectedImageBase64 = base64;
-      previewImg.src = 'data:image/jpeg;base64,' + base64;
-      previewWrap.classList.remove('hidden');
+      if (previewImg) previewImg.src = 'data:image/jpeg;base64,' + base64;
+      showEl(previewWrap);
       if (uploadTitle) {
         uploadTitle.textContent = '✓ ' + __('advisor.imageAttached');
         uploadTitle.style.color = 'var(--success)';
@@ -50,8 +57,8 @@ function bindImageUpload() {
       e.stopPropagation();
       selectedImageBase64 = null;
       imageInput.value = '';
-      previewWrap.classList.add('hidden');
-      previewImg.src = '';
+      hideEl(previewWrap);
+      if (previewImg) previewImg.src = '';
       if (uploadTitle) {
         uploadTitle.textContent = __('advisor.upload');
         uploadTitle.style.color = '';
@@ -102,55 +109,69 @@ function compressImage(file, maxDim, quality) {
   });
 }
 
-function handleAnalyze() {
-  var inputEl = document.getElementById('problemInput');
-  var input = inputEl ? inputEl.value.trim() : '';
-  var type = document.getElementById('typeSelect').value;
-  var farmerId = getFarmerId();
-  var resultsEl = document.getElementById('results');
-  var errorEl = document.getElementById('error');
-  var errorMsg = document.getElementById('errorMsg');
-  var btn = document.getElementById('askBtn');
-  var emptyEl = document.getElementById('emptyState');
-  var loadingEl = document.getElementById('loadingState');
+function setAskBtnLoading(btn, loading) {
+  if (!btn) return;
+  if (loading) {
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner sm"></span> ' + __('common.loading');
+  } else {
+    btn.disabled = false;
+    btn.innerHTML = '<span id="askIconRestore"></span> ' + __('advisor.ask');
+    var ir = $('askIconRestore');
+    if (ir && window.svg) ir.appendChild(window.svg('sparkles', 18));
+  }
+}
 
-  errorEl.classList.add('hidden');
-  resultsEl.classList.add('hidden');
-  emptyEl.classList.add('hidden');
+function handleAnalyze() {
+  var inputEl = $('problemInput');
+  var input = inputEl ? inputEl.value.trim() : '';
+  var typeEl = $('typeSelect');
+  var type = typeEl ? typeEl.value : 'CROP';
+  var farmerId = getFarmerId();
+  var resultsEl = $('results');
+  var errorEl = $('error');
+  var errorMsg = $('errorMsg');
+  var btn = $('askBtn');
+  var emptyEl = $('emptyState');
+  var loadingEl = $('loadingState');
+
+  hideEl(errorEl);
+  hideEl(resultsEl);
+  hideEl(emptyEl);
 
   if (!input) {
-    errorMsg.textContent = __('advisor.describe') + ' ' + __('common.required');
-    errorEl.classList.remove('hidden');
+    if (errorMsg) errorMsg.textContent = __('advisor.describe') + ' ' + __('common.required');
+    showEl(errorEl);
     return;
   }
   if (!farmerId) {
-    errorMsg.textContent = __('auth.invalidCredentials');
-    errorEl.classList.remove('hidden');
+    if (errorMsg) errorMsg.textContent = __('auth.invalidCredentials');
+    showEl(errorEl);
     return;
   }
 
-  loadingEl.classList.remove('hidden');
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner sm"></span> ' + __('common.loading');
+  showEl(loadingEl);
+  setAskBtnLoading(btn, true);
 
   analyzeProblem(farmerId, type, input, selectedImageBase64).then(function (result) {
-    loadingEl.classList.add('hidden');
-    btn.disabled = false;
-    btn.innerHTML = '<span id="askIconRestore"></span> ' + __('advisor.ask');
-    var ir = document.getElementById('askIconRestore');
-    if (ir) ir.appendChild(window.svg('sparkles', 18));
-    displayResults(result);
-    saveAdviceToHistory(result, input, type);
-    renderHistory();
+    hideEl(loadingEl);
+    setAskBtnLoading(btn, false);
+    if (result) {
+      displayResults(result);
+      saveAdviceToHistory(result, input, type);
+      renderHistory();
+    } else {
+      if (errorMsg) errorMsg.textContent = __('advisor.error');
+      showEl(errorEl);
+    }
   }).catch(function (err) {
-    loadingEl.classList.add('hidden');
-    btn.disabled = false;
-    btn.innerHTML = '<span id="askIconRestore"></span> ' + __('advisor.ask');
-    var ir = document.getElementById('askIconRestore');
-    if (ir) ir.appendChild(window.svg('sparkles', 18));
-    var msg = err && err.message === 'unauthorized' ? __('auth.invalidCredentials') : (err && err.message ? err.message : __('advisor.error'));
-    errorMsg.textContent = msg;
-    errorEl.classList.remove('hidden');
+    hideEl(loadingEl);
+    setAskBtnLoading(btn, false);
+    var msg = err && err.message === 'unauthorized'
+      ? __('auth.invalidCredentials')
+      : (err && err.message ? err.message : __('advisor.error'));
+    if (errorMsg) errorMsg.textContent = msg;
+    showEl(errorEl);
   });
 }
 
@@ -171,41 +192,48 @@ function extractPriceAmount(priceStr) {
 }
 
 function displayResults(result) {
-  var resultsEl = document.getElementById('results');
-  var diagnosisEl = document.getElementById('diagnosisContent');
-  var solutionEl = document.getElementById('solutionContent');
-  var confidenceEl = document.getElementById('confidenceValue');
-  var confidenceFill = document.getElementById('confidenceFill');
-  var remediesList = document.getElementById('remediesList');
-  var remediesEmpty = document.getElementById('remediesEmpty');
+  if (!result) return;
+  var resultsEl = $('results');
+  var diagnosisEl = $('diagnosisContent');
+  var solutionEl = $('solutionContent');
+  var confidenceEl = $('confidenceValue');
+  var confidenceFill = $('confidenceFill');
+  var remediesList = $('remediesList');
+  var remediesEmpty = $('remediesEmpty');
 
-  diagnosisEl.textContent = result.diagnosis || '—';
-  solutionEl.textContent = result.solution || '—';
+  if (diagnosisEl) diagnosisEl.textContent = result.diagnosis || '—';
+  if (solutionEl) solutionEl.textContent = result.solution || '—';
 
   var conf = normalizeConfidence(result.confidence);
-  confidenceEl.textContent = conf + '%';
-  requestAnimationFrame(function () {
-    confidenceFill.style.width = conf + '%';
-    confidenceFill.classList.remove('confidence-low', 'confidence-mid', 'confidence-high');
-    if (conf < 50) confidenceFill.classList.add('confidence-low');
-    else if (conf < 75) confidenceFill.classList.add('confidence-mid');
-    else confidenceFill.classList.add('confidence-high');
-  });
-
-  remediesList.innerHTML = '';
-  if (result.remedies && result.remedies.length > 0) {
-    remediesEmpty.classList.add('hidden');
-    result.remedies.forEach(function (r, i) {
-      remediesList.appendChild(renderRemedyCard(r, i));
+  if (confidenceEl) confidenceEl.textContent = conf + '%';
+  if (confidenceFill) {
+    requestAnimationFrame(function () {
+      confidenceFill.style.width = conf + '%';
+      confidenceFill.classList.remove('confidence-low', 'confidence-mid', 'confidence-high');
+      if (conf < 50) confidenceFill.classList.add('confidence-low');
+      else if (conf < 75) confidenceFill.classList.add('confidence-mid');
+      else confidenceFill.classList.add('confidence-high');
     });
-  } else {
-    remediesEmpty.classList.remove('hidden');
   }
 
-  resultsEl.classList.remove('hidden');
-  resultsEl.style.display = 'flex';
+  if (remediesList) {
+    remediesList.innerHTML = '';
+    if (result.remedies && result.remedies.length > 0) {
+      hideEl(remediesEmpty);
+      result.remedies.forEach(function (r, i) {
+        remediesList.appendChild(renderRemedyCard(r, i));
+      });
+    } else {
+      showEl(remediesEmpty);
+    }
+  }
+
+  showEl(resultsEl);
+  if (resultsEl) resultsEl.style.display = 'flex';
   setTimeout(function () {
-    resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (resultsEl && resultsEl.scrollIntoView) {
+      resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
   }, 100);
 }
 
@@ -253,12 +281,12 @@ function renderRemedyCard(r, index) {
     '</div>';
 
   var iconEl = card.querySelector('.remedy-icon');
-  if (iconEl) iconEl.appendChild(window.svg('shopping', 18));
+  if (iconEl && window.svg) iconEl.appendChild(window.svg('shopping', 18));
 
   var amountIcon = card.querySelector('[data-meta="amount"]');
-  if (amountIcon) amountIcon.appendChild(window.svg('flask', 14));
+  if (amountIcon && window.svg) amountIcon.appendChild(window.svg('flask', 14));
   var locIcon = card.querySelector('[data-meta="loc"]');
-  if (locIcon) locIcon.appendChild(window.svg('pin', 14));
+  if (locIcon && window.svg) locIcon.appendChild(window.svg('pin', 14));
 
   return card;
 }
@@ -277,15 +305,15 @@ function saveAdviceToHistory(result, input, type) {
 }
 
 function renderHistory() {
-  var section = document.getElementById('historySection');
-  var list = document.getElementById('historyList');
+  var section = $('historySection');
+  var list = $('historyList');
   if (!list) return;
   var history = getFromHistory(ADVISOR_HISTORY_KEY);
   if (history.length === 0) {
-    if (section) section.classList.add('hidden');
+    hideEl(section);
     return;
   }
-  if (section) section.classList.remove('hidden');
+  showEl(section);
   list.innerHTML = '';
   history.forEach(function (h) {
     var card = document.createElement('div');
@@ -302,16 +330,14 @@ function renderHistory() {
       '</div>' +
       '<p class="text-secondary" style="font-size: var(--text-sm); margin: 0;">' + escapeHtml((h.input || '').substring(0, 140)) + ((h.input || '').length > 140 ? '…' : '') + '</p>';
     card.addEventListener('click', function () {
-      var input = document.getElementById('problemInput');
+      var input = $('problemInput');
       if (input) input.value = h.input || '';
-      if (typeof displayResults === 'function') {
-        displayResults({
-          diagnosis: h.diagnosis,
-          solution: h.solution,
-          confidence: h.confidence,
-          remedies: h.remedies || []
-        });
-      }
+      displayResults({
+        diagnosis: h.diagnosis,
+        solution: h.solution,
+        confidence: h.confidence,
+        remedies: h.remedies || []
+      });
     });
     list.appendChild(card);
   });

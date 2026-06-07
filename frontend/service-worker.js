@@ -6,7 +6,7 @@
    - Navigation: network-first, fallback to offline.html
    ===================================================================== */
 
-var VERSION = 'v1.1.0';
+var VERSION = 'v1.2.0';
 var SHELL_CACHE = 'kmw-shell-' + VERSION;
 var ASSET_CACHE = 'kmw-assets-' + VERSION;
 var API_CACHE = 'kmw-api-' + VERSION;
