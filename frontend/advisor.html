@@ -112,6 +112,14 @@
       <p data-i18n="advisor.emptyHint">Tell us what your crop or animal looks like, and the AI will help diagnose.</p>
     </div>
 
+    <section id="latestSection" class="hidden mt-5">
+      <div class="section-header mb-3">
+        <h3 class="eyebrow" data-i18n="advisor.recentTitle">Latest diagnosis</h3>
+        <a href="#historySection" class="btn-link" id="latestViewAll" data-i18n="dashboard.viewAll">View all</a>
+      </div>
+      <div id="latestCard" class="card card-interactive" style="cursor: pointer;"></div>
+    </section>
+
     <section id="results" class="hidden mt-5" style="display: flex; flex-direction: column; gap: var(--s-4);">
       <div class="result-card fade-up">
         <div class="result-title">
@@ -148,9 +156,15 @@
       </div>
     </section>
 
-    <section id="historySection" class="hidden mt-6">
-      <h3 class="eyebrow mb-3" data-i18n="advisor.history">Recent diagnoses</h3>
+    <section id="historySection" class="mt-6">
+      <div class="section-header mb-3">
+        <h3 class="eyebrow" data-i18n="advisor.history">Recent diagnoses</h3>
+        <button type="button" id="clearHistoryBtn" class="btn-link" data-i18n="advisor.clearHistory" style="display:none;">Clear</button>
+      </div>
       <div id="historyList" class="stagger" style="display: flex; flex-direction: column; gap: var(--s-3);"></div>
+      <div id="historyEmpty" class="empty-state" style="padding: var(--s-5) var(--s-3);">
+        <p data-i18n="advisor.noHistory">No recent diagnoses yet — your past queries will appear here.</p>
+      </div>
     </section>
   </main>
 

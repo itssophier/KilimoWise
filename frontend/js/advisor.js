@@ -16,7 +16,24 @@ function showEl(el) { if (el) el.classList.remove('hidden'); }
 document.addEventListener('DOMContentLoaded', function () {
   redirectIfNotLoggedIn();
   renderHistory();
+  renderLatest();
   bindImageUpload();
+  bindClearHistory();
+});
+
+window.addEventListener('pageshow', function (e) {
+  renderHistory();
+  renderLatest();
+});
+window.addEventListener('focus', function () {
+  renderHistory();
+  renderLatest();
+});
+document.addEventListener('visibilitychange', function () {
+  if (!document.hidden) {
+    renderHistory();
+    renderLatest();
+  }
 });
 
 function bindImageUpload() {
@@ -160,6 +177,7 @@ function handleAnalyze() {
       displayResults(result);
       saveAdviceToHistory(result, input, type);
       renderHistory();
+      renderLatest();
     } else {
       if (errorMsg) errorMsg.textContent = __('advisor.error');
       showEl(errorEl);
@@ -307,38 +325,102 @@ function saveAdviceToHistory(result, input, type) {
 function renderHistory() {
   var section = $('historySection');
   var list = $('historyList');
+  var empty = $('historyEmpty');
+  var clearBtn = $('clearHistoryBtn');
   if (!list) return;
   var history = getFromHistory(ADVISOR_HISTORY_KEY);
+  list.innerHTML = '';
+
   if (history.length === 0) {
-    hideEl(section);
+    hideEl(list);
+    if (empty) showEl(empty);
+    if (clearBtn) hideEl(clearBtn);
     return;
   }
-  showEl(section);
-  list.innerHTML = '';
+
+  showEl(list);
+  if (empty) hideEl(empty);
+  if (clearBtn) showEl(clearBtn);
+
   history.forEach(function (h) {
-    var card = document.createElement('div');
-    card.className = 'card fade-up';
-    card.style.cursor = 'pointer';
-    var conf = normalizeConfidence(h.confidence);
-    card.innerHTML =
-      '<div class="card-header">' +
-        '<div style="min-width: 0; flex: 1;">' +
-          '<div class="card-title" style="font-size: var(--text-base);">' + escapeHtml(h.diagnosis || '—') + '</div>' +
-          '<div class="card-subtitle">' + formatDate(h.createdAt) + ' · ' + (h.type === 'ANIMAL' ? __('advisor.animal') : __('advisor.crop')) + '</div>' +
-        '</div>' +
-        '<span class="badge">' + conf + '%</span>' +
+    list.appendChild(renderHistoryCard(h));
+  });
+}
+
+function renderHistoryCard(h) {
+  var card = document.createElement('div');
+  card.className = 'card fade-up';
+  card.style.cursor = 'pointer';
+  card.setAttribute('role', 'button');
+  card.setAttribute('tabindex', '0');
+  var conf = normalizeConfidence(h.confidence);
+  var type = h.type === 'ANIMAL' ? __('advisor.animal') : __('advisor.crop');
+  var inputText = (h.input || '').trim();
+  var inputPreview = inputText.length > 160 ? inputText.substring(0, 160) + '…' : inputText;
+  card.innerHTML =
+    '<div class="card-header">' +
+      '<div class="list-item-icon" style="width:36px;height:36px;border-radius:10px;background:var(--primary-soft);color:var(--primary);display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;"></div>' +
+      '<div style="min-width: 0; flex: 1;">' +
+        '<div class="card-title" style="font-size: var(--text-base);">' + escapeHtml(h.diagnosis || '—') + '</div>' +
+        '<div class="card-subtitle">' + formatDate(h.createdAt) + ' · ' + escapeHtml(type) + '</div>' +
       '</div>' +
-      '<p class="text-secondary" style="font-size: var(--text-sm); margin: 0;">' + escapeHtml((h.input || '').substring(0, 140)) + ((h.input || '').length > 140 ? '…' : '') + '</p>';
-    card.addEventListener('click', function () {
-      var input = $('problemInput');
-      if (input) input.value = h.input || '';
+      '<span class="badge ' + (conf < 50 ? 'danger' : conf < 75 ? 'accent' : 'success') + '">' + conf + '%</span>' +
+    '</div>' +
+    (inputPreview ? '<p class="text-secondary" style="font-size: var(--text-sm); margin: var(--s-2) 0 0; line-height: var(--leading-relaxed);">' + escapeHtml(inputPreview) + '</p>' : '');
+  var iconEl = card.querySelector('.list-item-icon');
+  if (iconEl && window.svg) iconEl.appendChild(window.svg('leaf', 18));
+  var activate = function () {
+    var input = $('problemInput');
+    if (input) input.value = h.input || '';
+    var typeEl = $('typeSelect');
+    if (typeEl) typeEl.value = h.type || 'CROP';
+    var seg = $('typeSegment');
+    if (seg) {
+      seg.querySelectorAll('.segment-item').forEach(function (b) {
+        b.classList.toggle('active', b.getAttribute('data-value') === (h.type || 'CROP'));
+      });
+    }
+    if (typeof displayResults === 'function') {
       displayResults({
         diagnosis: h.diagnosis,
         solution: h.solution,
         confidence: h.confidence,
         remedies: h.remedies || []
       });
-    });
-    list.appendChild(card);
+    }
+    var results = $('results');
+    if (results && results.scrollIntoView) results.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+  card.addEventListener('click', activate);
+  card.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activate(); }
+  });
+  return card;
+}
+
+function renderLatest() {
+  var section = $('latestSection');
+  var cardEl = $('latestCard');
+  if (!section || !cardEl) return;
+  var history = getFromHistory(ADVISOR_HISTORY_KEY);
+  if (!history || history.length === 0) {
+    hideEl(section);
+    cardEl.innerHTML = '';
+    return;
+  }
+  showEl(section);
+  cardEl.innerHTML = '';
+  cardEl.appendChild(renderHistoryCard(history[0]));
+}
+
+function bindClearHistory() {
+  var btn = $('clearHistoryBtn');
+  if (!btn) return;
+  btn.addEventListener('click', function () {
+    if (!window.confirm(__('advisor.clearConfirm'))) return;
+    try { localStorage.removeItem(ADVISOR_HISTORY_KEY); } catch (e) { /* ignore */ }
+    renderHistory();
+    renderLatest();
+    if (typeof showToast === 'function') showToast(__('advisor.cleared'), 'success');
   });
 }
