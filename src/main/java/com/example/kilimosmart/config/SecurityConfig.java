@@ -12,7 +12,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
 
 @Configuration
 @EnableWebSecurity
@@ -35,17 +34,7 @@ public class SecurityConfig {
                 .formLogin(form -> form.disable())
                 .httpBasic(basic -> basic.disable())
                 .logout(l -> l.disable())
-                .anonymous(a -> a.disable())
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.OPTIONS, "/**")).permitAll()
-                        .requestMatchers(PathPatternRequestMatcher.withDefaults().matcher("/graphql")).permitAll()
-                        .requestMatchers(PathPatternRequestMatcher.withDefaults().matcher("/graphql/**")).permitAll()
-                        .requestMatchers(PathPatternRequestMatcher.withDefaults().matcher("/graphiql")).permitAll()
-                        .requestMatchers(PathPatternRequestMatcher.withDefaults().matcher("/graphiql/**")).permitAll()
-                        .requestMatchers(PathPatternRequestMatcher.withDefaults().matcher("/actuator/health")).permitAll()
-                        .requestMatchers(PathPatternRequestMatcher.withDefaults().matcher("/actuator/health/**")).permitAll()
-                        .anyRequest().authenticated()
-                )
+                .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
