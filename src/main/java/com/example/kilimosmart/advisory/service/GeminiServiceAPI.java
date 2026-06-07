@@ -2,10 +2,14 @@ package com.example.kilimosmart.advisory.service;
 
 import com.example.kilimosmart.advisory.dto.AdvisoryResponseDto;
 import com.example.kilimosmart.config.GeminiProperties;
+import com.example.kilimosmart.config.errors.ApiException;
 import com.example.kilimosmart.farmer.entity.Farmer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
 import tools.jackson.databind.ObjectMapper;
 
@@ -26,78 +30,164 @@ public class GeminiServiceAPI {
 
         Map<String, Object> request = buildRequest(farmer, type, description, imageBase64);
 
-        try {
-
-            String response = restClient.post()
-                    .uri("https://generativelanguage.googleapis.com/v1beta/models/"
-                            + geminiProperties.model()
-                            + ":generateContent?key="
-                            + geminiProperties.apiKey())
-                    .body(request)
-                    .retrieve()
-                    .body(String.class);
-
-            log.debug("Gemini RAW RESPONSE: {}", response);
-
-            var root = objectMapper.readTree(response);
-
-            var candidates = root.path("candidates");
-
-            if (!candidates.isArray() || candidates.isEmpty()) {
-                throw new RuntimeException("Gemini returned empty response");
-            }
-
-            var textNode = candidates.get(0)
-                    .path("content")
-                    .path("parts");
-
-            if (!textNode.isArray() || textNode.isEmpty()) {
-                throw new RuntimeException("Gemini returned invalid parts");
-            }
-
-            String text = textNode.get(0).path("text").asText();
-
-            log.info("Gemini TEXT OUTPUT: {}", text);
-
-            String cleanedJson = stripCodeFences(text);
-            AdvisoryResponseDto parsed = objectMapper.readValue(cleanedJson, AdvisoryResponseDto.class);
-            return sanitize(parsed);
-
-        } catch (Exception e) {
-            log.error("Gemini failed", e);
-            throw new RuntimeException("Gemini failed", e);
+        if (geminiProperties.apiKey() == null || geminiProperties.apiKey().isBlank()) {
+            log.warn("GEMINI_API_KEY not set; returning offline fallback diagnosis");
+            return offlineFallback(type, "AI advisor is temporarily unavailable. Please try again shortly, or visit your nearest agro-vet for in-person advice.");
         }
+
+        int maxAttempts = 3;
+        long backoffMs = 800;
+
+        for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+            try {
+                String response = restClient.post()
+                        .uri("https://generativelanguage.googleapis.com/v1beta/models/"
+                                + geminiProperties.model()
+                                + ":generateContent?key="
+                                + geminiProperties.apiKey())
+                        .body(request)
+                        .retrieve()
+                        .body(String.class);
+
+                log.debug("Gemini RAW RESPONSE (attempt {}): {}", attempt, response);
+
+                var root = objectMapper.readTree(response);
+                var candidates = root.path("candidates");
+
+                if (!candidates.isArray() || candidates.isEmpty()) {
+                    String blockReason = root.path("promptFeedback").path("blockReason").asText("");
+                    if (!blockReason.isBlank()) {
+                        log.warn("Gemini blocked the request: {}", blockReason);
+                        return offlineFallback(type, "Your question was blocked by the safety filter (" + blockReason + "). Try rephrasing the description.");
+                    }
+                    throw new RuntimeException("Gemini returned empty response");
+                }
+
+                var textNode = candidates.get(0).path("content").path("parts");
+                if (!textNode.isArray() || textNode.isEmpty()) {
+                    String finishReason = candidates.get(0).path("finishReason").asText("");
+                    if (!finishReason.isBlank()) {
+                        return offlineFallback(type, "The AI couldn't complete this request (reason: " + finishReason + "). Try a different description.");
+                    }
+                    throw new RuntimeException("Gemini returned invalid parts");
+                }
+
+                String text = textNode.get(0).path("text").asText();
+                log.info("Gemini TEXT OUTPUT: {}", text);
+
+                String cleanedJson = stripCodeFences(text);
+                AdvisoryResponseDto parsed = objectMapper.readValue(cleanedJson, AdvisoryResponseDto.class);
+                return sanitize(parsed);
+
+            } catch (HttpClientErrorException.TooManyRequests e) {
+                log.warn("Gemini 429 (attempt {}/{}): quota exceeded", attempt, maxAttempts);
+                if (attempt == maxAttempts) {
+                    return offlineFallback(type, "AI advisor is rate-limited right now. Please wait a few minutes and try again, or visit your nearest agro-vet.");
+                }
+                sleep(backoffMs * attempt);
+            } catch (HttpClientErrorException.Forbidden e) {
+                log.error("Gemini 403 - check API key / billing", e);
+                return offlineFallback(type, "AI advisor is unavailable due to a configuration issue. Please contact support.");
+            } catch (HttpClientErrorException e) {
+                log.error("Gemini client error {}: {}", e.getStatusCode(), e.getMessage());
+                if (e.getStatusCode().value() >= 500 && attempt < maxAttempts) {
+                    sleep(backoffMs * attempt);
+                    continue;
+                }
+                return offlineFallback(type, "AI advisor is temporarily unavailable (error " + e.getStatusCode().value() + "). Please try again in a moment.");
+            } catch (HttpServerErrorException e) {
+                log.error("Gemini server error {}: {}", e.getStatusCode(), e.getMessage());
+                if (attempt < maxAttempts) { sleep(backoffMs * attempt); continue; }
+                return offlineFallback(type, "AI advisor is temporarily unavailable. Please try again shortly.");
+            } catch (ResourceAccessException e) {
+                log.error("Gemini timeout / network", e);
+                if (attempt < maxAttempts) { sleep(backoffMs * attempt); continue; }
+                return offlineFallback(type, "AI advisor timed out. Please try again with a shorter description.");
+            } catch (Exception e) {
+                log.error("Gemini failed (attempt {})", attempt, e);
+                if (attempt < maxAttempts) { sleep(backoffMs * attempt); continue; }
+                throw new ApiException("ADVISORY_FAILED", "AI advisor could not generate a diagnosis. Please try again.", true);
+            }
+        }
+
+        return offlineFallback(type, "AI advisor is temporarily unavailable. Please try again shortly.");
+    }
+
+    private void sleep(long ms) {
+        try { Thread.sleep(ms); } catch (InterruptedException ie) { Thread.currentThread().interrupt(); }
+    }
+
+    private AdvisoryResponseDto offlineFallback(String type, String userMessage) {
+        boolean isCrop = "CROP".equalsIgnoreCase(type);
+        return sanitize(new AdvisoryResponseDto(
+                "AI advisor is temporarily unavailable",
+                "0.3",
+                userMessage,
+                List.of(
+                        new com.example.kilimosmart.advisory.dto.RemedyResponseDto(
+                                isCrop ? "Manual crop inspection" : "Visit veterinary officer",
+                                "KES 200 - 500 (consultation fee)",
+                                "1 visit",
+                                isCrop ? "KALRO office or agro-vet in your sub-county" : "Nearest agro-vet or veterinary office"
+                        ),
+                        new com.example.kilimosmart.advisory.dto.RemedyResponseDto(
+                                isCrop ? "Photograph the affected area in daylight" : "Photograph the affected animal or area",
+                                "KES 0 (free)",
+                                "1 clear photo + 2-line description",
+                                "Use your phone camera"
+                        ),
+                        new com.example.kilimosmart.advisory.dto.RemedyResponseDto(
+                                "Try again in 5-10 minutes",
+                                "KES 0 (free)",
+                                "1 retry",
+                                "Tap the Ask button again"
+                        )
+                )
+        ));
     }
 
     public String generateInsights(Farmer farmer, String currentMonth) {
+
+        if (geminiProperties.apiKey() == null || geminiProperties.apiKey().isBlank()) {
+            log.warn("GEMINI_API_KEY not set; insights will use static fallback");
+            return null;
+        }
 
         String prompt = buildInsightsPrompt(farmer, currentMonth);
         Map<String, Object> request = Map.of(
                 "contents", List.of(Map.of("parts", List.of(Map.of("text", prompt))))
         );
 
-        try {
-            String response = restClient.post()
-                    .uri("https://generativelanguage.googleapis.com/v1beta/models/"
-                            + geminiProperties.model()
-                            + ":generateContent?key="
-                            + geminiProperties.apiKey())
-                    .body(request)
-                    .retrieve()
-                    .body(String.class);
+        int maxAttempts = 2;
+        for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+            try {
+                String response = restClient.post()
+                        .uri("https://generativelanguage.googleapis.com/v1beta/models/"
+                                + geminiProperties.model()
+                                + ":generateContent?key="
+                                + geminiProperties.apiKey())
+                        .body(request)
+                        .retrieve()
+                        .body(String.class);
 
-            log.debug("Gemini INSIGHTS RAW: {}", response);
+                log.debug("Gemini INSIGHTS RAW: {}", response);
 
-            var textNode = objectMapper.readTree(response)
-                    .path("candidates").get(0)
-                    .path("content").path("parts").get(0)
-                    .path("text");
+                var textNode = objectMapper.readTree(response)
+                        .path("candidates").get(0)
+                        .path("content").path("parts").get(0)
+                        .path("text");
 
-            return textNode.asText();
-        } catch (Exception e) {
-            log.error("Gemini insights failed", e);
-            throw new RuntimeException("Gemini insights failed", e);
+                return textNode.asText();
+            } catch (HttpClientErrorException.TooManyRequests e) {
+                log.warn("Gemini insights 429 (attempt {}/{})", attempt, maxAttempts);
+                if (attempt == maxAttempts) return null;
+                sleep(600L * attempt);
+            } catch (Exception e) {
+                log.error("Gemini insights failed", e);
+                return null;
+            }
         }
+        return null;
     }
 
     private Map<String, Object> buildRequest(Farmer farmer, String type, String description, String imageBase64) {
