@@ -119,6 +119,13 @@
           <span data-i18n="advisor.diagnosis">Diagnosis</span>
         </div>
         <div class="result-body" id="diagnosisContent">—</div>
+        <div class="confidence-row" style="margin-top: var(--s-3);">
+          <span class="label text-secondary" data-i18n="advisor.confidence">Confidence</span>
+          <strong id="confidenceValue" class="value num">0%</strong>
+        </div>
+        <div class="confidence-bar">
+          <div id="confidenceFill" class="confidence-bar-fill" style="width:0%"></div>
+        </div>
       </div>
 
       <div class="result-card alt fade-up">
@@ -129,33 +136,14 @@
         <div class="result-body" id="solutionContent">—</div>
       </div>
 
-      <div class="card fade-up">
-        <div class="confidence-row">
-          <span class="label" data-i18n="advisor.confidence">Confidence</span>
-          <strong id="confidenceValue" class="value">0%</strong>
-        </div>
-        <div class="confidence-bar">
-          <div id="confidenceFill" class="confidence-bar-fill" style="width:0%"></div>
-        </div>
-      </div>
-
-      <div id="remediesSection" class="result-card info hidden fade-up">
-        <div class="result-title">
+      <div class="fade-up">
+        <div class="result-title" style="margin-bottom: var(--s-3);">
           <span id="remediesIcon"></span>
           <span data-i18n="advisor.remedies">Remedies & where to buy</span>
         </div>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th data-i18n="advisor.name">Name</th>
-                <th data-i18n="advisor.price">Est. price</th>
-                <th data-i18n="advisor.amount">Amount</th>
-                <th data-i18n="advisor.location">Location</th>
-              </tr>
-            </thead>
-            <tbody id="remediesBody"></tbody>
-          </table>
+        <div id="remediesList" class="remedy-list"></div>
+        <div id="remediesEmpty" class="empty-state hidden" style="padding: var(--s-5);">
+          <p data-i18n="advisor.noRemedies">No specific remedies suggested for this issue. Visit your nearest agro-vet for in-person advice.</p>
         </div>
       </div>
     </section>
@@ -180,7 +168,6 @@
       placeIcon(document.getElementById('removeImageBtn'), 'close', 14);
       placeIcon(document.getElementById('emptyArt'), 'leaf', 80);
 
-      // Segmented control wiring
       var segment = document.getElementById('typeSegment');
       var hidden = document.getElementById('typeSelect');
       segment.addEventListener('click', function (e) {
@@ -191,16 +178,9 @@
         hidden.value = btn.getAttribute('data-value');
       });
 
-      // Char counter
       var problemInput = document.getElementById('problemInput');
       var charCount = document.getElementById('charCount');
       problemInput.addEventListener('input', function () { charCount.textContent = problemInput.value.length; });
-
-      // Save location to localStorage on profile for sidebar display
-      try {
-        var farmer = JSON.parse(localStorage.getItem('kilimowise_profile'));
-        // No-op: data fetched elsewhere
-      } catch (e) { /* ignore */ }
     });
   </script>
 </body>

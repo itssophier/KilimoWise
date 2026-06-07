@@ -1,5 +1,9 @@
+/* =====================================================================
+   KiliMoWise — AI Advisor
+   ===================================================================== */
+
 var ADVISOR_HISTORY_KEY = 'kilimowise_advice_history';
-var ADVISOR_MAX_HISTORY = 5;
+var ADVISOR_MAX_HISTORY = 8;
 var selectedImageBase64 = null;
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -22,7 +26,7 @@ function bindImageUpload() {
     var file = e.target.files && e.target.files[0];
     if (!file) return;
     if (file.size > 6 * 1024 * 1024) {
-      showToast('Image too large (max 6MB)', 'error');
+      showToast(__('advisor.imageTooLarge') || 'Image too large (max 6MB)', 'error');
       imageInput.value = '';
       return;
     }
@@ -36,7 +40,7 @@ function bindImageUpload() {
       }
       showToast(__('advisor.attachmentAdded'), 'success');
     }).catch(function () {
-      showToast('Could not read image', 'error');
+      showToast(__('advisor.imageReadError') || 'Could not read image', 'error');
     });
   });
 
@@ -62,6 +66,12 @@ function bindImageUpload() {
     });
     ['dragleave', 'drop'].forEach(function (ev) {
       uploadZone.addEventListener(ev, function (e) { e.preventDefault(); uploadZone.classList.remove('dragover'); });
+    });
+    uploadZone.addEventListener('drop', function (e) {
+      var files = e.dataTransfer && e.dataTransfer.files;
+      if (!files || files.length === 0) return;
+      imageInput.files = files;
+      imageInput.dispatchEvent(new Event('change'));
     });
   }
 }
@@ -144,14 +154,30 @@ function handleAnalyze() {
   });
 }
 
+function extractPriceAmount(priceStr) {
+  if (!priceStr) return { amount: null, unit: '' };
+  var s = String(priceStr);
+  var rangeMatch = s.match(/KES\s*([\d,]+(?:\.\d+)?)\s*[-–]\s*([\d,]+(?:\.\d+)?)/i);
+  if (rangeMatch) {
+    var lo = parseFloat(rangeMatch[1].replace(/,/g, ''));
+    var hi = parseFloat(rangeMatch[2].replace(/,/g, ''));
+    return { amount: (lo + hi) / 2, unit: 'KES', range: { lo: lo, hi: hi }, full: s };
+  }
+  var singleMatch = s.match(/KES\s*([\d,]+(?:\.\d+)?)/i);
+  if (singleMatch) {
+    return { amount: parseFloat(singleMatch[1].replace(/,/g, '')), unit: 'KES', full: s };
+  }
+  return { amount: null, unit: '', full: s };
+}
+
 function displayResults(result) {
   var resultsEl = document.getElementById('results');
   var diagnosisEl = document.getElementById('diagnosisContent');
   var solutionEl = document.getElementById('solutionContent');
   var confidenceEl = document.getElementById('confidenceValue');
   var confidenceFill = document.getElementById('confidenceFill');
-  var remediesBody = document.getElementById('remediesBody');
-  var remediesSection = document.getElementById('remediesSection');
+  var remediesList = document.getElementById('remediesList');
+  var remediesEmpty = document.getElementById('remediesEmpty');
 
   diagnosisEl.textContent = result.diagnosis || '—';
   solutionEl.textContent = result.solution || '—';
@@ -160,22 +186,20 @@ function displayResults(result) {
   confidenceEl.textContent = conf + '%';
   requestAnimationFrame(function () {
     confidenceFill.style.width = conf + '%';
+    confidenceFill.classList.remove('confidence-low', 'confidence-mid', 'confidence-high');
+    if (conf < 50) confidenceFill.classList.add('confidence-low');
+    else if (conf < 75) confidenceFill.classList.add('confidence-mid');
+    else confidenceFill.classList.add('confidence-high');
   });
 
+  remediesList.innerHTML = '';
   if (result.remedies && result.remedies.length > 0) {
-    remediesSection.classList.remove('hidden');
-    remediesBody.innerHTML = '';
-    result.remedies.forEach(function (r) {
-      var tr = document.createElement('tr');
-      tr.innerHTML =
-        '<td>' + escapeHtml(r.name || '—') + '</td>' +
-        '<td class="num">' + escapeHtml(r.estimatedPrice || '—') + '</td>' +
-        '<td>' + escapeHtml(r.amountNeeded || '—') + '</td>' +
-        '<td>' + escapeHtml(r.availabilityLocation || '—') + '</td>';
-      remediesBody.appendChild(tr);
+    remediesEmpty.classList.add('hidden');
+    result.remedies.forEach(function (r, i) {
+      remediesList.appendChild(renderRemedyCard(r, i));
     });
   } else {
-    remediesSection.classList.add('hidden');
+    remediesEmpty.classList.remove('hidden');
   }
 
   resultsEl.classList.remove('hidden');
@@ -185,6 +209,60 @@ function displayResults(result) {
   }, 100);
 }
 
+function renderRemedyCard(r, index) {
+  var card = document.createElement('div');
+  card.className = 'remedy-card fade-up';
+  card.style.animationDelay = (index * 80) + 'ms';
+
+  var name = r.name || '—';
+  var priceText = r.estimatedPrice || __('advisor.priceNA');
+  var amount = r.amountNeeded || '—';
+  var location = r.availabilityLocation || '—';
+
+  var priceInfo = extractPriceAmount(priceText);
+  var priceDisplay = '';
+  if (priceInfo.range) {
+    priceDisplay = '<div class="remedy-price-amount num">KES ' + priceInfo.range.lo.toLocaleString('en-KE') + ' &ndash; ' + priceInfo.range.hi.toLocaleString('en-KE') + '</div>';
+  } else if (priceInfo.amount) {
+    priceDisplay = '<div class="remedy-price-amount num">KES ' + priceInfo.amount.toLocaleString('en-KE') + '</div>';
+  } else {
+    priceDisplay = '<div class="remedy-price-amount num">—</div>';
+  }
+
+  card.innerHTML =
+    '<div class="remedy-head">' +
+      '<div class="remedy-icon" style="background: var(--harvest-100); color: var(--harvest-700);"></div>' +
+      '<div class="remedy-title-block">' +
+        '<div class="remedy-name">' + escapeHtml(name) + '</div>' +
+        '<div class="remedy-price-row">' + priceDisplay +
+          (priceText && !priceInfo.amount && !priceInfo.range ? '<div class="remedy-price-full">' + escapeHtml(priceText) + '</div>' : '') +
+        '</div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="remedy-meta">' +
+      '<div class="remedy-meta-item">' +
+        '<span class="remedy-meta-icon" data-meta="amount"></span>' +
+        '<div><div class="remedy-meta-label">' + __('advisor.amount') + '</div>' +
+        '<div class="remedy-meta-value">' + escapeHtml(amount) + '</div></div>' +
+      '</div>' +
+      '<div class="remedy-meta-item">' +
+        '<span class="remedy-meta-icon" data-meta="loc"></span>' +
+        '<div><div class="remedy-meta-label">' + __('advisor.location') + '</div>' +
+        '<div class="remedy-meta-value">' + escapeHtml(location) + '</div></div>' +
+      '</div>' +
+    '</div>';
+
+  var iconEl = card.querySelector('.remedy-icon');
+  if (iconEl) iconEl.appendChild(window.svg('shopping', 18));
+
+  var amountIcon = card.querySelector('[data-meta="amount"]');
+  if (amountIcon) amountIcon.appendChild(window.svg('flask', 14));
+  var locIcon = card.querySelector('[data-meta="loc"]');
+  if (locIcon) locIcon.appendChild(window.svg('pin', 14));
+
+  return card;
+}
+
 function saveAdviceToHistory(result, input, type) {
   var entry = {
     input: input,
@@ -192,50 +270,49 @@ function saveAdviceToHistory(result, input, type) {
     diagnosis: result.diagnosis,
     solution: result.solution,
     confidence: result.confidence,
-    remedies: result.remedies,
-    generatedAt: result.generatedAt || new Date().toISOString()
+    remedies: result.remedies || [],
+    createdAt: new Date().toISOString()
   };
   saveToHistory(ADVISOR_HISTORY_KEY, entry, ADVISOR_MAX_HISTORY);
 }
 
 function renderHistory() {
-  var history = getFromHistory(ADVISOR_HISTORY_KEY);
-  var el = document.getElementById('historyList');
   var section = document.getElementById('historySection');
-
-  if (!history || history.length === 0) {
+  var list = document.getElementById('historyList');
+  if (!list) return;
+  var history = getFromHistory(ADVISOR_HISTORY_KEY);
+  if (history.length === 0) {
     if (section) section.classList.add('hidden');
     return;
   }
   if (section) section.classList.remove('hidden');
-  if (!el) return;
-  el.innerHTML = '';
-
-  history.forEach(function (item) {
-    var card = document.createElement('button');
-    card.type = 'button';
-    card.className = 'insight-card fade-up';
-    card.style.cssText = 'text-align: left; width: 100%; border: 1px solid var(--border-soft); background: var(--surface); padding: var(--s-4); border-radius: var(--r-lg); cursor: pointer; font-family: inherit; color: inherit; position: relative;';
-    var conf = normalizeConfidence(item.confidence);
-    var iconName = item.type === 'ANIMAL' ? 'tractor' : 'sprout';
-    var cardClass = item.type === 'ANIMAL' ? 'alt' : '';
-    card.className = 'insight-card ' + cardClass + ' fade-up';
+  list.innerHTML = '';
+  history.forEach(function (h) {
+    var card = document.createElement('div');
+    card.className = 'card fade-up';
+    card.style.cursor = 'pointer';
+    var conf = normalizeConfidence(h.confidence);
     card.innerHTML =
-      '<div class="flex justify-between items-center mb-2">' +
-        '<div class="flex items-center gap-2">' +
-          '<span class="icon-wrap" style="display:inline-flex;color:var(--text-muted);"></span>' +
-          '<strong style="font-family: var(--font-display); font-size: var(--text-md); font-weight: 500;">' + escapeHtml(item.diagnosis || __('advisor.diagnosis')) + '</strong>' +
+      '<div class="card-header">' +
+        '<div style="min-width: 0; flex: 1;">' +
+          '<div class="card-title" style="font-size: var(--text-base);">' + escapeHtml(h.diagnosis || '—') + '</div>' +
+          '<div class="card-subtitle">' + formatDate(h.createdAt) + ' · ' + (h.type === 'ANIMAL' ? __('advisor.animal') : __('advisor.crop')) + '</div>' +
         '</div>' +
-        '<span class="badge primary">' + conf + '%</span>' +
+        '<span class="badge">' + conf + '%</span>' +
       '</div>' +
-      '<p class="text-secondary" style="font-size: var(--text-sm); margin-bottom: var(--s-2);">' + escapeHtml(item.input || '') + '</p>' +
-      '<small class="text-muted num" style="font-size: var(--text-xs);">' + formatDate(item.generatedAt) + '</small>';
-    card.querySelector('.icon-wrap').appendChild(window.svg(iconName, 16));
+      '<p class="text-secondary" style="font-size: var(--text-sm); margin: 0;">' + escapeHtml((h.input || '').substring(0, 140)) + ((h.input || '').length > 140 ? '…' : '') + '</p>';
     card.addEventListener('click', function () {
-      var inputEl = document.getElementById('problemInput');
-      if (inputEl) inputEl.value = item.input || '';
-      displayResults(item);
+      var input = document.getElementById('problemInput');
+      if (input) input.value = h.input || '';
+      if (typeof displayResults === 'function') {
+        displayResults({
+          diagnosis: h.diagnosis,
+          solution: h.solution,
+          confidence: h.confidence,
+          remedies: h.remedies || []
+        });
+      }
     });
-    el.appendChild(card);
+    list.appendChild(card);
   });
 }

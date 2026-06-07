@@ -74,6 +74,24 @@
       </div>
     </div>
 
+    <section class="card fade-up" id="installCard" style="display: none;">
+      <div class="flex items-center" style="gap: var(--s-3);">
+        <span class="stat-icon" id="installIcon" style="background: var(--primary-soft); color: var(--primary);"></span>
+        <div style="flex: 1; min-width: 0;">
+          <div class="card-title" data-i18n="pwa.installTitle">Install KiliMoWise</div>
+          <div class="card-subtitle" data-i18n="pwa.installSub">Get the full app experience on your device</div>
+        </div>
+        <button class="btn btn-primary btn-sm" id="installCta">
+          <span data-i18n="pwa.installCta">Install</span>
+        </button>
+      </div>
+      <div id="iosInstructions" class="hidden" style="margin-top: var(--s-3); padding: var(--s-3); background: var(--surface-2); border-radius: var(--r-md); font-size: var(--text-sm); color: var(--text-secondary);">
+        <p style="margin: 0 0 var(--s-2);" data-i18n="pwa.iosStep1">Tap the Share button in Safari.</p>
+        <p style="margin: 0 0 var(--s-2);" data-i18n="pwa.iosStep2">Scroll and tap "Add to Home Screen".</p>
+        <p style="margin: 0;" data-i18n="pwa.iosStep3">Confirm by tapping "Add".</p>
+      </div>
+    </section>
+
     <section class="card fade-up">
       <div class="card-header">
         <div>
@@ -167,7 +185,107 @@
       window.setTheme(t);
     }
 
+    function fmtDate(s) {
+      if (!s) return '—';
+      try { var d = new Date(s); if (isNaN(d.getTime())) return s; return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }); } catch (e) { return s; }
+    }
+
+    function fmtGender(g) {
+      if (!g) return '—';
+      return ({ MALE: 'Male', FEMALE: 'Female', OTHER: 'Other' }[g]) || g;
+    }
+
+    function applyProfileToUi(profile, fallbackName, fallbackPhone) {
+      var name = profile.firstName ? ((profile.firstName + ' ' + (profile.lastName || '')).trim()) : (fallbackName || '—');
+      var phone = profile.phoneNumber || fallbackPhone || '—';
+
+      var parts = name.split(/\s+/).filter(Boolean);
+      var first = parts[0] || '—';
+      var last = parts.length > 1 ? parts.slice(1).join(' ') : '—';
+
+      var av = document.getElementById('profileAvatar');
+      var pn = document.getElementById('profileName');
+      var pm = document.getElementById('profileMeta');
+      var kp = document.getElementById('kvPhone');
+      var kf = document.getElementById('kvFirst');
+      var kl = document.getElementById('kvLast');
+      var kd = document.getElementById('kvDob');
+      var kg = document.getElementById('kvGender');
+      var klo = document.getElementById('kvLocation');
+
+      if (av) av.textContent = getInitials();
+      if (pn) pn.textContent = name;
+      if (pm) pm.textContent = __('profile.signedInAs') + ' ' + name;
+      if (kp) kp.textContent = phone;
+      if (kf) kf.textContent = first;
+      if (kl) kl.textContent = last;
+      if (kd) kd.textContent = fmtDate(profile.dob);
+      if (kg) kg.textContent = fmtGender(profile.gender);
+      if (klo) klo.textContent = profile.location || '—';
+    }
+
+    function loadProfile(forceRefresh) {
+      var fid = getFarmerId();
+      var name = localStorage.getItem('kilimowise_name') || '';
+      var phone = localStorage.getItem('kilimowise_phone') || '';
+
+      var cached = null;
+      try { cached = JSON.parse(localStorage.getItem('kilimowise_profile') || 'null'); } catch (e) {}
+
+      if (cached) {
+        applyProfileToUi(cached, name, phone);
+      } else {
+        applyProfileToUi({}, name, phone);
+      }
+
+      if (!fid || typeof getFarmerProfile !== 'function') return;
+
+      getFarmerProfile(fid).then(function (fresh) {
+        if (!fresh) return;
+        try { localStorage.setItem('kilimowise_profile', JSON.stringify(fresh)); } catch (e) {}
+        if (fresh.phoneNumber) {
+          try { localStorage.setItem('kilimowise_phone', fresh.phoneNumber); } catch (e) {}
+        }
+        if (fresh.firstName) {
+          try { localStorage.setItem('kilimowise_first', fresh.firstName); } catch (e) {}
+        }
+        if (fresh.lastName) {
+          try { localStorage.setItem('kilimowise_last', fresh.lastName); } catch (e) {}
+        }
+        if (fresh.dob) {
+          try { localStorage.setItem('kilimowise_dob', fresh.dob); } catch (e) {}
+        }
+        if (fresh.gender) {
+          try { localStorage.setItem('kilimowise_gender', fresh.gender); } catch (e) {}
+        }
+        if (fresh.location) {
+          try { localStorage.setItem('kilimowise_location', fresh.location); } catch (e) {}
+        }
+        applyProfileToUi(fresh, name, phone);
+      }).catch(function () { /* offline ok */ });
+    }
+
+    function loadExpensesTotal() {
+      var fid = getFarmerId();
+      if (!fid || typeof getExpenses !== 'function') return;
+      getExpenses(fid).then(function (exps) {
+        var total = (exps || []).reduce(function (s, e) { return s + (parseFloat(e.amount) || 0); }, 0);
+        var el = document.getElementById('statTotal');
+        if (el) el.textContent = formatCurrency(total);
+      }).catch(function () {});
+    }
+
+    function loadRecentDiagnosis() {
+      try {
+        var hist = JSON.parse(localStorage.getItem('kilimowise_advice_history') || '[]');
+        var el = document.getElementById('statDiag');
+        if (el && hist.length > 0) el.textContent = hist[0].diagnosis || '—';
+      } catch (e) { /* ignore */ }
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
+      redirectIfNotLoggedIn();
+
       var placeIcon = function (el, name, size) { if (el) el.appendChild(window.svg(name, size || 18)); };
       placeIcon(document.getElementById('iconExp'), 'wallet', 18);
       placeIcon(document.getElementById('iconDiag'), 'leaf', 18);
@@ -176,45 +294,23 @@
       placeIcon(document.getElementById('themeSystemIcon'), 'globe', 16);
       placeIcon(document.getElementById('logoutIcon'), 'log-out', 18);
 
-      // Profile
-      var name = localStorage.getItem('kilimowise_name') || '—';
-      var phone = localStorage.getItem('kilimowise_phone') || '—';
-      var parts = name.split(/\s+/);
-      var first = parts[0] || '—';
-      var last = parts.length > 1 ? parts.slice(1).join(' ') : '—';
-      document.getElementById('profileName').textContent = name;
-      document.getElementById('profileMeta').textContent = __('profile.signedInAs') + ' ' + name;
-      document.getElementById('profileAvatar').textContent = getInitials();
-      document.getElementById('kvPhone').textContent = phone;
-      document.getElementById('kvFirst').textContent = first;
-      document.getElementById('kvLast').textContent = last;
-      document.getElementById('kvDob').textContent = localStorage.getItem('kilimowise_dob') || '—';
-      document.getElementById('kvGender').textContent = localStorage.getItem('kilimowise_gender') || '—';
-      document.getElementById('kvLocation').textContent = localStorage.getItem('kilimowise_location') || '—';
+      var installIcon = document.getElementById('installIcon');
+      if (installIcon) installIcon.appendChild(window.svg('plus', 20));
 
-      // Member since — use token issuance? We don't have it, show '—' for now
+      loadProfile(true);
+      loadExpensesTotal();
+      loadRecentDiagnosis();
+      setupInstall();
+
       var since = localStorage.getItem('kilimowise_memberSince');
       if (!since) {
         var d = new Date();
         since = d.toLocaleDateString('en-GB', { year: 'numeric', month: 'short' });
         try { localStorage.setItem('kilimowise_memberSince', since); } catch (e) { /* ignore */ }
       }
-      document.getElementById('kvSince').textContent = since;
+      var ks = document.getElementById('kvSince');
+      if (ks) ks.textContent = since;
 
-      // Stats
-      var fid = getFarmerId();
-      if (fid) {
-        getExpenses(fid).then(function (exps) {
-          var total = (exps || []).reduce(function (s, e) { return s + (parseFloat(e.amount) || 0); }, 0);
-          document.getElementById('statTotal').textContent = formatCurrency(total);
-        }).catch(function () {});
-      }
-      var hist = JSON.parse(localStorage.getItem('kilimowise_advice_history') || '[]');
-      if (hist.length > 0) {
-        document.getElementById('statDiag').textContent = hist[0].diagnosis || '—';
-      }
-
-      // Theme segment
       var currentPref = getStoredThemePref();
       var tSeg = document.getElementById('themeSegment');
       tSeg.querySelectorAll('.segment-item').forEach(function (b) {
@@ -226,7 +322,6 @@
         });
       });
 
-      // Lang segment
       var lSeg = document.getElementById('langSegment');
       lSeg.querySelectorAll('.segment-item').forEach(function (b) {
         b.classList.toggle('active', b.getAttribute('data-value') === currentLang);
@@ -237,6 +332,54 @@
         });
       });
     });
+
+    function setupInstall() {
+      var card = document.getElementById('installCard');
+      var cta = document.getElementById('installCta');
+      var ios = document.getElementById('iosInstructions');
+      if (!card) return;
+
+      function refresh() {
+        if (!window.pwa) return;
+        if (window.pwa.isInstalled && window.pwa.isInstalled()) {
+          card.style.display = 'none';
+          return;
+        }
+        if (window.pwa.canInstall && window.pwa.canInstall()) {
+          card.style.display = '';
+        } else {
+          card.style.display = 'none';
+        }
+      }
+
+      window.addEventListener('kmw:installavailable', refresh);
+      window.addEventListener('kmw:installed', function () {
+        card.style.display = 'none';
+        if (window.showToast) window.showToast(__('pwa.installed'), 'success');
+      });
+
+      refresh();
+
+      if (cta) {
+        cta.addEventListener('click', function () {
+          if (!window.pwa || !window.pwa.promptInstall) return;
+          window.pwa.promptInstall().then(function (r) {
+            if (r && r.ios) {
+              if (ios) ios.classList.remove('hidden');
+            }
+          });
+        });
+      }
+    }
+
+    window.addEventListener('pageshow', function (e) {
+      if (e.persisted) {
+        loadProfile(true);
+        loadExpensesTotal();
+        loadRecentDiagnosis();
+      }
+    });
+    window.addEventListener('focus', function () { loadProfile(true); });
   </script>
 </body>
 </html>

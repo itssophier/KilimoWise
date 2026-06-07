@@ -125,6 +125,15 @@
   var deferredPrompt = null;
   var INSTALL_DISMISS_KEY = 'kilimowise_install_dismissed';
 
+  function isIos() {
+    return /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
+  }
+  function isInStandaloneMode() {
+    return window.matchMedia && window.matchMedia('(display-mode: standalone)').matches
+      || window.navigator.standalone === true;
+  }
+  function isInstalled() { return isInStandaloneMode(); }
+
   window.addEventListener('beforeinstallprompt', function (e) {
     e.preventDefault();
     deferredPrompt = e;
@@ -136,14 +145,19 @@
     window.dispatchEvent(new Event('kmw:installed'));
   });
 
-  function canInstall() { return !!deferredPrompt; }
+  function canInstall() { return !!deferredPrompt || isIos(); }
 
   async function promptInstall() {
-    if (!deferredPrompt) return false;
-    deferredPrompt.prompt();
-    var choice = await deferredPrompt.userChoice;
-    deferredPrompt = null;
-    return choice && choice.outcome === 'accepted';
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      var choice = await deferredPrompt.userChoice;
+      deferredPrompt = null;
+      return { outcome: choice && choice.outcome, ios: false };
+    }
+    if (isIos() && !isInstalled()) {
+      return { outcome: 'ios-instructions', ios: true };
+    }
+    return { outcome: 'unavailable', ios: false };
   }
 
   function isInstallDismissed() {
@@ -165,6 +179,8 @@
     promptInstall: promptInstall,
     isInstallDismissed: isInstallDismissed,
     dismissInstall: dismissInstall,
+    isIos: isIos,
+    isInstalled: isInstalled,
     isOnline: function () { return navigator.onLine; }
   };
 })();

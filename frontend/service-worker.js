@@ -2,11 +2,11 @@
    KiliMoWise service worker
    - App shell: cache-first, versioned
    - Same-origin GET: stale-while-revalidate
-   - Cross-origin (GraphQL): network-first, fallback to cache
+   - Cross-origin (GraphQL): network-first, no cache writes
    - Navigation: network-first, fallback to offline.html
    ===================================================================== */
 
-var VERSION = 'v1.0.0';
+var VERSION = 'v1.1.0';
 var SHELL_CACHE = 'kmw-shell-' + VERSION;
 var ASSET_CACHE = 'kmw-assets-' + VERSION;
 var API_CACHE = 'kmw-api-' + VERSION;
@@ -82,17 +82,15 @@ self.addEventListener('fetch', function (event) {
   var isFont = url.hostname === 'fonts.googleapis.com' || url.hostname === 'fonts.gstatic.com';
   var isCdn = url.hostname === 'cdn.jsdelivr.net';
 
-  // ---- GraphQL / API: network-first, fallback cache, no offline page ----
+  // ---- GraphQL / API: network-first, no cache writes (always fresh) ----
   if (isApi) {
     event.respondWith(
       fetch(req).then(function (res) {
-        if (res.ok) {
-          var copy = res.clone();
-          caches.open(API_CACHE).then(function (cache) { cache.put(req, copy); });
-        }
         return res;
       }).catch(function () {
-        return caches.match(req).then(function (cached) { return cached || new Response(JSON.stringify({ errors: [{ message: 'offline' }] }), { status: 503, headers: { 'Content-Type': 'application/json' } }); });
+        return caches.match(req).then(function (cached) {
+          return cached || new Response(JSON.stringify({ errors: [{ message: 'offline', extensions: { code: 'OFFLINE' } }] }), { status: 503, headers: { 'Content-Type': 'application/json' } });
+        });
       })
     );
     return;

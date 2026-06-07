@@ -62,7 +62,7 @@ function loadInsights(forceRefresh) {
     var payload = normalizeInsights(data);
     renderInsights(payload);
     cacheInsights({ payload: payload, savedAt: Date.now() });
-    showMeta(__('insights.cached') + ' · ' + __('common.justNow').replace('common.justNow', 'just now'), false);
+    showMeta(__('insights.cached') + ' · ' + __('insights.justNow'), false);
   }).catch(function () {
     showLoading(false);
     if (cached && cached.payload) {
@@ -164,13 +164,17 @@ function renderTips(tips) {
   tips.forEach(function (t, i) {
     var card = document.createElement('div');
     card.className = 'insight-card fade-up';
-    var titleText = t.title && t.title.trim() ? t.title : ('💡 ' + __('insights.tips') + ' ' + (i + 1));
+    var titleText = t.title && t.title.trim() ? t.title : __('insights.tips') + ' ' + (i + 1);
     card.innerHTML =
       '<div class="flex justify-between items-center mb-2">' +
-        '<h3>' + escapeHtml(titleText) + '</h3>' +
+        '<div class="flex items-center" style="gap: var(--s-2);">' +
+          '<span class="list-item-icon" style="width:32px;height:32px;background:var(--primary-soft);color:var(--primary);"></span>' +
+          '<h3 style="margin: 0;">' + escapeHtml(titleText) + '</h3>' +
+        '</div>' +
         '<span class="badge primary">' + __('insights.tips') + '</span>' +
       '</div>' +
       '<p>' + escapeHtml(t.content || '—') + '</p>';
+    card.querySelector('.list-item-icon').appendChild(window.svg('lightbulb', 16));
     el.appendChild(card);
   });
 }
@@ -197,10 +201,10 @@ function hideMeta() {
 function formatRelativeTime(ts) {
   if (!ts) return '';
   var diff = Date.now() - ts;
-  if (diff < 60_000) return 'just now';
-  if (diff < 3_600_000) return Math.floor(diff / 60_000) + ' min ago';
-  if (diff < 7_200_000) return '1 hour ago';
-  return Math.floor(diff / 3_600_000) + ' hours ago';
+  if (diff < 60_000) return __('insights.justNow');
+  if (diff < 3_600_000) return Math.floor(diff / 60_000) + ' ' + __('insights.minAgo');
+  if (diff < 86_400_000) return Math.floor(diff / 3_600_000) + ' ' + __('insights.hrAgo');
+  return Math.floor(diff / 86_400_000) + ' ' + __('insights.dayAgo');
 }
 
 function isCacheFresh(cached) {
@@ -218,4 +222,12 @@ function getCachedInsights() {
 document.addEventListener('DOMContentLoaded', function () {
   redirectIfNotLoggedIn();
   loadInsights();
+});
+
+window.addEventListener('pageshow', function (e) {
+  if (e.persisted) loadInsights(true);
+});
+window.addEventListener('focus', function () { loadInsights(true); });
+document.addEventListener('visibilitychange', function () {
+  if (!document.hidden) loadInsights(true);
 });

@@ -44,9 +44,14 @@
   </script>
 </head>
 <body>
+  <div data-topbar></div>
+
   <main class="page">
     <section class="hero scale-in" id="heroSection">
-      <div class="hero-eyebrow" data-i18n="dashboard.heroEyebrow">Today on the farm</div>
+      <div class="hero-eyebrow">
+        <span data-i18n="dashboard.heroEyebrow">Today on the farm</span>
+        <span id="heroLocation" class="text-tertiary" style="margin-left: 6px; font-size: 0.85em;"></span>
+      </div>
       <h1 class="hero-title" id="heroGreeting"><span data-i18n="dashboard.heroGreeting">Welcome back</span><span id="heroNameWrap">, <em id="heroName">Farmer</em></span></h1>
       <p class="hero-sub" data-i18n="dashboard.heroSub">Your farm's smart companion — ask, track, and grow with confidence.</p>
       <div class="hero-actions">
@@ -60,6 +65,13 @@
         </a>
       </div>
     </section>
+
+    <div class="section-header mb-3 mt-5">
+      <h2 class="section-title" data-i18n="dashboard.overview">Overview</h2>
+      <button class="btn-link" id="statsRefresh" style="display:inline-flex;align-items:center;gap:4px;">
+        <span data-i18n="common.refresh">Refresh</span>
+      </button>
+    </div>
 
     <section class="stat-grid stagger mb-5">
       <div class="stat-tile">
@@ -80,16 +92,22 @@
       <div class="stat-tile">
         <div class="stat-icon" id="iconChange"></div>
         <div class="stat-label" data-i18n="dashboard.monthChange">vs last month</div>
-        <div class="stat-value num" id="statMonthChange">0%</div>
+        <div class="stat-value num" id="statMonthChange">→ 0%</div>
       </div>
     </section>
 
     <section class="card card-feature fade-up" id="tipCard">
-      <div class="flex justify-between items-center mb-2">
-        <span class="eyebrow accent" data-i18n="dashboard.latestTip">Today's tip</span>
-        <span id="tipIcon" style="color: var(--harvest-300);"></span>
+      <div class="flex justify-between items-center mb-2" style="gap: var(--s-3);">
+        <div class="flex items-center" style="gap: var(--s-2);">
+          <span id="tipIcon" style="color: var(--harvest-300);"></span>
+          <span class="eyebrow accent" data-i18n="dashboard.latestTip">Today's tip</span>
+        </div>
+        <button class="btn-link" id="tipRefresh" style="display:inline-flex;align-items:center;gap:4px;color: rgba(243,238,221,0.8);">
+          <span data-i18n="common.refresh">Refresh</span>
+        </button>
       </div>
-      <p id="tipContent" style="font-family: var(--font-display); font-size: var(--text-lg); line-height: var(--leading-snug); color: #f3eedd;">—</p>
+      <p id="tipContent" style="font-family: var(--font-display); font-size: var(--text-lg); line-height: var(--leading-snug); color: #f3eedd; margin: 0 0 var(--s-2);">—</p>
+      <p id="tipMeta" class="text-tertiary" style="font-size: var(--text-xs); margin: 0;"></p>
     </section>
 
     <section id="diagnosisSection" class="card hidden fade-up mt-5">
@@ -105,6 +123,25 @@
         <span data-i18n="dashboard.viewAdvisor">Open advisor</span>
         <span id="diagnosisArrow"></span>
       </a>
+    </section>
+
+    <section class="card fade-up mt-5" id="recentSection">
+      <div class="card-header">
+        <div>
+          <div class="eyebrow" data-i18n="dashboard.recentActivity">Recent activity</div>
+          <div class="card-subtitle" data-i18n="dashboard.last3">Your last 3 expenses</div>
+        </div>
+        <a href="budget.html" class="btn-link" data-i18n="dashboard.viewAll">View all</a>
+      </div>
+      <div id="recentExpensesList"></div>
+      <div id="recentExpensesEmpty" class="empty-state hidden">
+        <div class="empty-icon" id="recentEmptyIcon"></div>
+        <div class="empty-title" data-i18n="dashboard.noExpenses">No expenses yet</div>
+        <div class="empty-sub" data-i18n="dashboard.noExpensesSub">Track your first expense to see insights here.</div>
+        <a href="budget.html" class="btn btn-primary mt-4">
+          <span data-i18n="dashboard.addFirst">Add your first expense</span>
+        </a>
+      </div>
     </section>
 
     <h3 class="eyebrow mt-6 mb-3" data-i18n="dashboard.quickActions">Quick actions</h3>
@@ -132,24 +169,6 @@
     </section>
   </main>
 
-  <script>
-    document.addEventListener('DOMContentLoaded', function () {
-      // Inject inline icons into elements
-      var placeIcon = function (el, name) { if (el) el.appendChild(window.svg(name, 20)); };
-      placeIcon(document.getElementById('iconTotal'), 'wallet');
-      placeIcon(document.getElementById('iconLast'), 'calendar');
-      placeIcon(document.getElementById('iconTop'), 'tag');
-      placeIcon(document.getElementById('iconChange'), 'trending-up');
-      placeIcon(document.getElementById('tipIcon'), 'sun');
-      placeIcon(document.getElementById('ctaAskIcon'), 'sparkles');
-      placeIcon(document.getElementById('ctaTrackIcon'), 'plus');
-      placeIcon(document.getElementById('diagnosisArrow'), 'arrow-right');
-      placeIcon(document.getElementById('qaAdvisor'), 'sparkles');
-      placeIcon(document.getElementById('qaBudget'), 'wallet');
-      placeIcon(document.getElementById('qaInsights'), 'chart');
-      placeIcon(document.getElementById('qaProfile'), 'user');
-    });
-  </script>
   <noscript><div style="display:flex;align-items:center;justify-content:center;min-height:60vh;text-align:center;padding:24px;font-family:system-ui,sans-serif;color:#0e3a23"><div><h1 style="margin:0 0 8px">KiliMoWise</h1><p>Please enable JavaScript to use this app.</p></div></div></noscript>
 </body>
 </html>

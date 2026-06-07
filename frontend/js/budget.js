@@ -243,9 +243,10 @@ function applyStats(stats) {
   var change = Number(stats.monthChangePercent) || 0;
   if (chg) {
     chg.textContent = (change > 0 ? '+' : '') + change.toFixed(0) + '%';
-    chg.classList.remove('stat-value-up', 'stat-value-down');
+    chg.classList.remove('stat-value-up', 'stat-value-down', 'stat-value-flat');
     if (change > 0) chg.classList.add('stat-value-up');
     else if (change < 0) chg.classList.add('stat-value-down');
+    else chg.classList.add('stat-value-flat');
   }
 
   var icon = document.getElementById('iconChange');
@@ -459,4 +460,12 @@ function destroyChart(name) {
 document.addEventListener('DOMContentLoaded', function () {
   redirectIfNotLoggedIn();
   loadExpenses();
+});
+
+window.addEventListener('pageshow', function (e) {
+  if (e.persisted) loadExpenses();
+});
+window.addEventListener('focus', function () { loadExpenses(); });
+document.addEventListener('visibilitychange', function () {
+  if (!document.hidden) loadExpenses();
 });
